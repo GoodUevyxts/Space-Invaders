@@ -1,0 +1,18 @@
+name = "iot-leaderboard"
+main = "src/worker.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+GITHUB_REPO = "GoodUevyxts/Space-Invaders"
+GITHUB_BRANCH = "scores"
+GITHUB_PATH = "leaderboard.json"
+# Add your exact Render HTTPS origin, without a trailing slash.
+ALLOWED_ORIGINS = "http://localhost:8000,http://127.0.0.1:8000"
+
+[[durable_objects.bindings]]
+name = "BOARD"
+class_name = "Leaderboard"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Leaderboard"]

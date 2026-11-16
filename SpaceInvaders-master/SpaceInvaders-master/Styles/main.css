@@ -1,31 +1,31 @@
 @font-face {
-  font-family: "PressStart2P";
+  font-family: "Press Start 2P";
   src: url("../fonts/PressStart2P.ttf");
+  font-display: swap;
 }
-
-html, body {
-  height: 100%;
-}
-
+html, body { width: 100%; height: 100%; overflow: hidden; }
 body {
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: black;
+  color: white;
+  overscroll-behavior: none;
 }
-
-canvas {
-  font-family: "PressStart2P";
-}
-
+canvas { font-family: "Press Start 2P", monospace; }
 #game-canvas {
   outline: 1px solid white;
+  width: min(100vw, 116.6667vh);
+  height: min(100vh, 85.7143vw);
+  object-fit: contain;
+  image-rendering: pixelated;
 }
-
 #background-canvas {
-  border: 1px solid black;
+  border: 0;
   width: 100%;
   height: 100%;
-  position: absolute;
+  position: fixed;
+  inset: 0;
   z-index: -1;
 }
