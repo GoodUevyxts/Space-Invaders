@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "iot-questions": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/Space-Invaders/mcp/server.mjs"]
+    }
+  }
+}

@@ -5,9 +5,13 @@ const assert = require('node:assert/strict');
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
   const context=await browser.newContext({viewport:{width:800,height:480}});
   const page=await context.newPage(); const errors=[];
+  // A controller exposed to both JoyToKey and the browser must not double-trigger input.
+  await page.addInitScript(()=>Object.defineProperty(navigator,'getGamepads',{value:()=>[{axes:[0,0],buttons:[{pressed:true}]}]}));
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://localhost:8000');
+  await page.goto(process.env.IOT_GAME_URL || 'http://localhost:8000');
   await page.waitForFunction(()=>window.IOT_CAMPAIGN);
+  await page.waitForTimeout(100);
+  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.phase),'title');
   const phase=()=>page.evaluate(()=>IOT_CAMPAIGN.state.phase);
   const press=async key=>{await page.keyboard.press(key);};
   const wait=expected=>page.waitForFunction(p=>IOT_CAMPAIGN.state.phase===p,expected);
@@ -41,13 +45,27 @@ const assert = require('node:assert/strict');
   await page.keyboard.down('ArrowRight');await page.waitForTimeout(100);await page.keyboard.up('ArrowRight');
   assert(await page.evaluate(x=>player.x>x,initialX));
   await press('a');assert(await page.evaluate(()=>player.lasers.length>0));
+  const beforeHit = await page.evaluate(()=>({score,dx:Math.abs(enemies[0].dx),freq:enemies[0].shotFreq}));
   // A real collision invokes a question after losing a life.
   await page.evaluate(()=>{enemies[0].lasers.push(new Laser(player.x+5,player.y+1,0,6,6,true));laserHitCheck();});
   await wait('question'); assert.equal(await page.evaluate(()=>player.lives),4);
   await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'iot-death-question.png')});
+  assert.equal(await page.evaluate(()=>score),beforeHit.score-1100);
+  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.pressure),1);
+  assert(await page.evaluate(dx=>Math.abs(enemies[0].dx)>dx,beforeHit.dx));
+  assert(await page.evaluate(freq=>enemies[0].shotFreq<freq,beforeHit.freq));
   const frames=await page.evaluate(()=>IOT_CAMPAIGN.state.m.battleFrames);
   await page.waitForTimeout(150); assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.battleFrames),frames);
   await answerCorrect();await wait('battle');
+  assert.equal(await page.evaluate(()=>score),beforeHit.score-1000);
+  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.pressure),0);
+  assert.equal(await page.evaluate(()=>player.volleySize),2);
+  await page.evaluate(()=>player.clearLasers());await press('a');
+  assert.equal(await page.evaluate(()=>player.lasers.length),2);
+  await page.evaluate(()=>IOT_CAMPAIGN.question('battle'));await answerCorrect();await wait('battle');
+  assert.equal(await page.evaluate(()=>player.volleySize),3);
+  await page.evaluate(()=>player.clearLasers());await press('a');
+  assert.equal(await page.evaluate(()=>player.lasers.length),3);
   // Fatal collision still completes the security lesson and review before name entry.
   await page.evaluate(()=>{player.setLives(1);enemies[0].lasers.push(new Laser(player.x+5,player.y+1,0,6,6,true));laserHitCheck();});
   await wait('question');
@@ -93,6 +111,19 @@ const assert = require('node:assert/strict');
   assert.equal(await page.evaluate(()=>IOT_LEADERBOARD.snapshot().pending),0);
   assert.equal(ids.length,2);assert.equal(ids[0],ids[1]);
   assert.equal(await page.evaluate(()=>IOT_LEADERBOARD.snapshot().top[0].name),'ABC');
+  // A generated static export extends only the matching mission and is visible in-game.
+  await context.route('**/Scripts/generated-questions.js',route=>route.fulfill({contentType:'application/javascript',body:
+    'IOT_MISSIONS[0].decisions.push({prompt:"A reviewed extra question for this mission?",options:[["Choice one",true,"A checked explanation for the correct choice."],["Choice two",false,"An explanation for an incorrect option."],["Choice three",false,"An explanation for another wrong option."],["Choice four",false,"An explanation for the final wrong option."]]});'}));
+  await page.reload();await page.waitForFunction(()=>IOT_MISSIONS[0].decisions.length===7);
+  assert.equal(await page.evaluate(()=>IOT_MISSIONS[1].decisions.length),6);
+  await press('a');await wait('plan');
+  // Practice retries cannot farm points or undo the recorded difficulty consequence.
+  const wrong=await page.evaluate(()=>{IOT_CAMPAIGN.question('plan');return ['a','b','c','d'][IOT_CAMPAIGN.state.m.questions[IOT_CAMPAIGN.state.questionIndex].options.findIndex(o=>!o[1])];});
+  await press(wrong);await feedback();assert.equal(await page.evaluate(()=>score),0);
+  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.pressure),1);
+  const repeat=await page.evaluate(()=>{IOT_CAMPAIGN.state.phase='question';return ['a','b','c','d'][IOT_CAMPAIGN.state.m.questions[IOT_CAMPAIGN.state.questionIndex].options.findIndex(o=>o[1])];});
+  await press(repeat);await feedback();assert.equal(await page.evaluate(()=>score),0);
+  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.pressure),1);
   assert.deepEqual(errors,[]); console.log('PASS: 60-question schema, four-button flow, Kanban limit, collisions, paused questions, offline persistence, ten reviews and victory.');
   await browser.close();
 })().catch(error=>{console.error(error);process.exit(1);});

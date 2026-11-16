@@ -11,6 +11,13 @@ test('score schema rejects spoofed types, invalid names, extra fields and imposs
   assert.equal(validateScore({...base,score:53500,completed:10}).score,53500);
   assert.throws(() => validateScore({...base,score:53600,completed:10}));
 });
+test('v2 bonuses have distinct bounds while queued v1 scores remain valid',()=>{
+  assert.equal(validateScore({...base,build:'iot-v2',score:3100}).score,3100);
+  assert.throws(()=>validateScore({...base,build:'iot-v2',score:3200}));
+  assert.equal(validateScore({...base,build:'iot-v2',score:59500,completed:10}).score,59500);
+  assert.throws(()=>validateScore({...base,build:'iot-v2',score:59600,completed:10}));
+  assert.throws(()=>validateScore({...base,score:59500,completed:10}));
+});
 test('a retry is idempotent and an ID collision cannot replace an accepted score', () => {
   const first = addScore(empty(), base);
   assert.equal(first.board.entries.length,1);

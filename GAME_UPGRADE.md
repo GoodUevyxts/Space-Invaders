@@ -15,6 +15,8 @@ The existing game directory is `SpaceInvaders-master/SpaceInvaders-master/` (cal
 | Add | GAME/Scripts/controls.js | Keyboard emulation and optional Gamepad fallback |
 | Add | GAME/Scripts/missions.js | Ten criteria and 20 base questions |
 | Add | GAME/Scripts/question-bank.js | 40 additional questions, four answers each |
+| Add | GAME/Scripts/generated-questions.js | Offline export of approved MCP questions |
+| Add | GAME/data/generated-questions.json | Published generated-question source data |
 | Add | GAME/Scripts/campaign.js | Briefs, Kanban, risk register, events, questions, reviews, name entry |
 | Add | GAME/Scripts/leaderboard.js | IndexedDB score outbox, cached top ten and automatic retries |
 | Add | serverless/src/worker.js | Validated submission and GitHub commits, with serialized writes |
@@ -24,7 +26,11 @@ The existing game directory is `SpaceInvaders-master/SpaceInvaders-master/` (cal
 | Add | leaderboard.json | Initial empty board; copy to the dedicated scores branch |
 | Add | tests/worker.test.mjs | Validation, retry, conflict, rate and ranking checks |
 | Add | tests/browser.cjs | Browser flow and offline persistence checks |
-| Add | .gitignore | Excludes local secrets and dependencies |
+| Add | .gitignore | Excludes local secrets, dependencies and unpublished drafts |
+| Add | mcp.json | MCP client JSON template |
+| Add | mcp/ | Question-generation server, config generator, dependency lock and protocol tests |
+| Add | MCP_QUESTIONS.md | MCP setup and generation/review/export workflow |
+| Add | CRITERIA_STATUS.md | Source implementation versus deployment status |
 | Add | GAME_UPGRADE.md | This guide |
 
 Keep the existing `Scripts/background.js`, `Images/`, `sounds/`, `fonts/`, `error.html`, existing README files and other assets. Keep the MIT licence; a copy is included at the repository root because it accompanied the supplied files. The download archive includes original runtime assets too.
@@ -74,23 +80,23 @@ Your stick emits all four arrow keys. Your four buttons emit letters A, B, C and
 | Name entry | Cycle character | Add character | Delete character | — | Submit |
 | Top ten | — | New game | Retry uploads | — | New game |
 
-Space remains a fire/confirm alias for A; Enter remains a start/continue/submit alias for D; Escape aliases B. On a question screen those aliases also choose their numbered answer. Arrows highlight for orientation, but the four answer buttons select directly, as requested. No mouse or touch is needed. Change the key arrays in `Scripts/config.js` if your emitted keys differ. Optional browser Gamepad input is provided, but keyboard emulation is the intended setup. Avoid enabling two mappers for the same controller simultaneously.
+Space remains a fire/confirm alias for A; Enter remains a start/continue/submit alias for D; Escape aliases B. On a question screen those aliases also choose their numbered answer. Arrows highlight for orientation, but the four answer buttons select directly, as requested. No mouse or touch is needed. Change the key arrays in `Scripts/config.js` if your emitted keys differ. Optional browser Gamepad input is disabled by default so JoyToKey does not double-trigger actions. Set `gamepad.enabled` to true only when using direct Gamepad input instead of keyboard emulation.
 
 ## Gameplay and project management
 
-Each mission starts with an objective, budget ($1,400 on missions 1-3, $1,200 thereafter), team capacity (18 hours), and deadline (12-14 simulated hours). The Kanban board has To Do, Doing and Done states and a Doing limit of one. Starting a task places it in Doing; completing it spends its stated money and hours. B returns a Doing task to To Do. Completion cannot exceed capacity. Two completed tasks increase the player's simultaneous laser limit from two to three. Undelivered tasks remain visible and earn no review bonus.
+Each mission starts with an objective, budget ($1,400 on missions 1-3, $1,200 thereafter), team capacity (18 hours), and deadline (12-14 simulated hours). The Kanban board has To Do, Doing and Done states and a Doing limit of one. Starting a task places it in Doing; completing it spends its stated money and hours. B returns a Doing task to To Do. Completion cannot exceed capacity. Two completed tasks add one extra simultaneous-laser slot. Correct answers also unlock multi-laser volleys as described below. Undelivered tasks remain visible and earn no review bonus.
 
 Two risk entries start at likelihood x impact: 4x5=20 and 3x4=12. A mitigation costs money and two hours, lowers likelihood to one, and leaves impact unchanged. B explicitly accepts the exposure. Both risks must be decided before launch; you can launch with accepted risk or unfinished tasks. There is a short explanation after every consequential task, security, risk and event decision.
 
 Each mission draws one random event at launch: added scope, a budget cut, a security incident, or a quiet window. A/B responses trade scope, money, deadline and risk. A budget cut cannot retroactively remove money already spent. There is no real-money spending.
 
-Each criterion has six distinct questions (60 total); question order and four answer positions are shuffled every mission. Questions appear after losing a life, including the final life. At least three different questions must be answered before the mission review, so clearing a wave without being hit still covers the criterion. The Security planning tab also offers questions. A secure answer reduces exposure by two points (with total exposure floored at zero). A wrong answer remains recorded and adds three exposure points; the explanation teaches the correct principle. Once all six are answered, later life losses use practice questions without changing the original recorded result. This prevents farming repeated questions for bonuses.
+Each criterion starts with six distinct questions (60 total), plus any approved MCP exports; question order and four answer positions are shuffled every mission. Questions appear after losing a life, including the final life. At least three different questions must be answered before the mission review, so clearing a wave without being hit still covers the criterion. The Security planning tab also offers questions. A secure answer reduces exposure by two points (with total exposure floored at zero). A wrong answer remains recorded and adds three exposure points; the explanation teaches the correct principle. Once every question in that mission bank is answered, later life losses use practice questions without changing the original result or awarding more points. This prevents farming repeated questions for bonuses.
 
-Lower exposure slows enemy bullets (4/6/7 pixels per original simulation tick). Normal enemy speed is retained for waves 1-3 and rises gently, with a cap, for waves 4-10. Menus and questions pause all combat and its clock. Shooter simulation runs at 60 ticks/second, preserving its frame-based movement across display refresh rates. Menus do not need a time limit on the small screen.
+Lower exposure sets a slower base enemy-bullet speed (4/6/7 pixels per simulation tick). A separate pressure value modifies enemy movement, shooting frequency and bullet speed: losing a life or giving a fresh wrong answer adds one pressure point; a fresh correct answer removes one. Pressure is bounded from -3 to +4 and resets for each mission. Each point changes formation speed by 6%, firing frequency by about 5%, and bullet speed by 0.3 pixels/tick, with a bullet-speed cap. Negative pressure is easier; positive pressure is harder. Normal enemy speed is retained for waves 1-3 and rises gently, with a cap, for waves 4-10. Menus and questions pause all combat and its clock. Shooter simulation runs at 60 ticks/second, preserving its frame-based movement across display refresh rates. Menus do not need a time limit on the small screen.
 
 Review shows actual spending, tasks delivered, deadline met/missed and change in risk. Time is completed task/mitigation/event effort plus one simulated hour per 15 seconds of active combat. Security questions do not consume team hours. Risk reduction is the initial 32 exposure points minus current exposure, including security-answer reductions and wrong-answer additions. A negative reduction means risk increased. Deadline performance is assessed even on a failed mission; failure itself is shown separately.
 
-Original scoring remains +100 per enemy hit and -1,100 per lost life. A cleared wave adds up to 700: 100 each for the first three secure answers, 100 per delivered task, and 100 when risk fell and the deadline was met. A failed wave earns no review bonus. Three secure answers restore one life after a cleared wave, capped at five. The maximum full-campaign score is 53,500. On failure or victory, enter a 3-8 character arcade name using the stick and A, then submit with D.
+Original scoring remains +100 per enemy hit and -1,100 per lost life. Each of the first six fresh correct answers in a mission immediately adds 100 points, even if that wave is later lost; further questions still affect pressure and exposure but add no more answer points. Repeating an answered question gives no point or pressure reward. The first fresh correct answer unlocks a two-laser parallel volley from one fire press; the second unlocks a three-laser volley. Two volleys can be on screen at once, with an extra laser slot for completing two Kanban tasks. Weapons are recalculated per mission. A cleared wave adds a separate review bonus of up to 700: 100 each for the first three secure answers, 100 per delivered task, and 100 when risk fell and the deadline was met. A failed wave earns no review bonus. Three secure answers restore one life after a cleared wave, capped at five. The iot-v2 maximum full-campaign score is 59,500: 46,500 from enemy hits, up to 6,000 immediate answer bonuses and up to 7,000 review bonuses. The Worker also accepts queued iot-v1 scores under their older 53,500 maximum. On failure or victory, enter a 3-8 character arcade name using the stick and A, then submit with D.
 
 ## GitHub leaderboard and Cloudflare Worker
 
@@ -120,7 +126,7 @@ npm run deploy
 
 6. Set `GAME/Scripts/config.js` `leaderboardUrl` to the resulting HTTPS Worker URL. Commit that public URL and redeploy the game. No client secret is required.
 
-The Worker limits POST bodies to 1,024 bytes; usernames to `[A-Z0-9]{3,8}`; IDs to canonical version-4 UUIDs; builds to `iot-v1`; and mission counts to 0-10. Scores must be integers divisible by 100 within the campaign's maximum for the submitted cleared-wave count, with a lower bound of -20,000. Server timestamps are generated on receipt.
+The Worker limits POST bodies to 1,024 bytes; usernames to `[A-Z0-9]{3,8}`; IDs to canonical version-4 UUIDs; builds to `iot-v1` or `iot-v2`; and mission counts to 0-10. Scores must be integers divisible by 100 within the build-specific maximum for the submitted cleared-wave count (including up to 600 answer points for an in-progress v2 wave), with a lower bound of -20,000. Server timestamps are generated on receipt.
 
 A single Durable Object serializes board operations. GitHub writes include the current blob SHA and retry conflicts up to three times. The submission UUID is stored in the JSON entry: retries return the original acknowledgement rather than creating another score. Reusing an ID for different data is rejected. An IP-based 30 requests/minute limit includes reads and writes. CORS restricts browser origins. Neither CORS nor numeric validation proves that someone played honestly: this is an educational arcade leaderboard, not a cheat-proof competition. A public client can fabricate a plausible score. Competitive anti-cheat needs server-authoritative play or separately verified trusted results; no secret stored on a Pi could fix that.
 
@@ -130,7 +136,7 @@ GitHub failures, expired tokens, rate limits, Worker failures or offline network
 
 ## Updating questions on Render
 
-Edit `GAME/Scripts/missions.js` or `GAME/Scripts/question-bank.js` in GitHub, commit to the deployed branch and use Render's auto deploy or Manual Deploy > Deploy latest commit. No Worker redeploy is required for wording or question changes. Keep exactly four choices and one correct choice per question, and provide a short reason for every answer. If score rules change, update both client scoring and Worker validation/build together.
+Edit `GAME/Scripts/missions.js` or `GAME/Scripts/question-bank.js` in GitHub, or generate and review additions using `MCP_QUESTIONS.md`, commit to the deployed branch and use Render's auto deploy or Manual Deploy > Deploy latest commit. No Worker redeploy is required for wording or question changes. Deploy the updated Worker when first upgrading the game to iot-v2 so the new answer bonuses are accepted; old queued v1 submissions remain supported. Keep exactly four choices and one correct choice per question, and provide a short reason for every answer. If score rules change, update both client scoring and Worker validation/build together.
 
 This is plain HTML/CSS/JS: use an existing Render **Static Site**, with the nested GAME directory as its publish path. If the Render service root is the repository root, the publish path is `SpaceInvaders-master/SpaceInvaders-master`; a harmless build command is `echo static-game`. If its root directory is already the nested GAME directory, publish `.`. Keep the deployed branch as `main` (or your chosen reviewed code branch), never `scores`. If using a newly created feature branch, merge the reviewed changes into that deployed branch before expecting auto deploy. A Render service and its existing branch/settings have not been modified by these instructions.
 
@@ -145,7 +151,7 @@ npm test
 npm run check
 ```
 
-Browser checks need Playwright on a development computer (not the Pi): install it into a temporary test environment, with Chromium installed. Serve GAME on `localhost:8000`, make `playwright` resolvable to Node, then run `node tests/browser.cjs` from the repository root. `CHROMIUM_PATH` overrides `/usr/bin/chromium`. The checks exercise keyboard control, real laser collisions and life loss, paused questions, Kanban capacity, offline queue persistence after reload, all ten wave reviews and victory. Wave completion is forced during the campaign-flow test so it verifies transitions without an automated shooter bot. Manual playtesting on the physical Pi/Joy-Con is still needed. No live GitHub score commits or production Worker deployment are performed by the automated tests.
+Browser checks need Playwright on a development computer (not the Pi): install it into a temporary test environment, with Chromium installed. Serve GAME on `localhost:8000`, make `playwright` resolvable to Node, then run `node tests/browser.cjs` from the repository root. `CHROMIUM_PATH` overrides `/usr/bin/chromium`; `IOT_GAME_URL` overrides the local test URL. The checks exercise keyboard control, real laser collisions, life-loss penalties and pressure increases, immediate correct-answer bonuses, multi-laser volleys, paused questions, Kanban capacity, offline queue persistence after reload, all ten wave reviews and victory. Wave completion is forced during the campaign-flow test so it verifies transitions without an automated shooter bot. Manual playtesting on the physical Pi/Joy-Con is still needed. No live GitHub score commits or production Worker deployment are performed by the automated tests.
 
 ## Criteria mapping
 

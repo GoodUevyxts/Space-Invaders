@@ -19,7 +19,7 @@ window.IOT_CAMPAIGN = (() => {
     const source = IOT_MISSIONS[level - 1];
     C.m = {
       source, budget: level <= 3 ? 1400 : 1200, spent: 0, hours: 0, teamLimit: 18, deadline: 12 + level % 3,
-      battleFrames: 0, safe: 0, answered: new Map(), required: 3, event: null,
+      battleFrames: 0, safe: 0, answerBonus: 0, pressure: 0, answered: new Map(), required: 3, event: null,
       questions: shuffle(source.decisions).map(q => ({ ...q, options: shuffle(q.options) })),
       tasks: [
         { name: 'Design device policy', cost: 180, hours: 2, state: 0 },
@@ -53,7 +53,16 @@ window.IOT_CAMPAIGN = (() => {
     const m = C.m, q = m.questions[C.questionIndex], option = q.options[index];
     if (!option) return;
     const fresh = !m.answered.has(C.questionIndex);
-    if (fresh) { m.answered.set(C.questionIndex, option[1]); if (option[1]) m.safe++; }
+    let award = 0;
+    if (fresh) {
+      m.answered.set(C.questionIndex, option[1]);
+      if (option[1]) {
+        m.safe++;
+        m.pressure = Math.max(-3, m.pressure - 1);
+        if (m.safe <= 6) { award = 100; score += award; m.answerBonus += award; }
+      } else m.pressure = Math.min(4, m.pressure + 1);
+      applyCombatSettings();
+    }
     const next = () => {
       if (C.returnTo === 'review') {
         if (m.answered.size < m.required) question('review'); else finishReview(false);
@@ -63,7 +72,7 @@ window.IOT_CAMPAIGN = (() => {
       else C.phase = 'plan';
     };
     const effect = fresh
-      ? (option[1] ? 'Secure decision recorded: threat pressure falls.' : 'Risky decision recorded: threat pressure increases.')
+      ? (option[1] ? '+'+award+' points. Pressure falls; volley: '+player.volleySize+' laser(s). First six correct answers per mission earn points.' : 'Risky decision recorded: threat pressure increases.')
       : 'Practice answer: the original result stays recorded.';
     const correct = q.options.find(o => o[1]);
     const explanation = option[1] ? option[2] : option[2] + '\n\nBetter choice: ' + correct[0] + '. ' + correct[2];
@@ -147,18 +156,31 @@ window.IOT_CAMPAIGN = (() => {
       say('No disruption', 'A quiet delivery window leaves contingency available. Keeping a reserve helps when later levels encounter incidents.', resumeBattle);
     }
   }
+  function applyCombatSettings() {
+    const done = C.m.tasks.filter(t => t.state === 2).length;
+    player.volleySize = 1 + Math.min(2, C.m.safe);
+    player.laserTotal = player.volleySize * 2 + (done >= 2 ? 1 : 0);
+    const exposure = remainingRisk();
+    const pressure = C.m.pressure;
+    enemies.forEach(e => {
+      if (e.baseSpeed === undefined) e.baseSpeed = Math.abs(e.getDx());
+      if (e.baseShotFreq === undefined) e.baseShotFreq = e.shotFreq;
+      e.setDx((e.getDx() < 0 ? -1 : 1) * e.baseSpeed * (1 + pressure * 0.06));
+      e.bulletSpeed = Math.max(3, Math.min(8.2, (exposure <= 12 ? 4 : exposure > 30 ? 7 : 6) + pressure * 0.3));
+      e.shotFreq = Math.max(100, Math.round(e.baseShotFreq / (1 + pressure * 0.05)));
+      e.shotFrame = 0;
+    });
+  }
   function resumeBattle() {
     gamePaused = false; gamePausedDelay = 0; activeKey = -1;
     player.clearLasers(); enemies.forEach(e => e.clearLasers());
-    // Delivering controls/testing and making secure choices has a visible shooter effect.
-    const done = C.m.tasks.filter(t => t.state === 2).length;
-    player.laserTotal = done >= 2 ? 3 : 2;
-    const exposure = remainingRisk();
-    enemies.forEach(e => e.bulletSpeed = exposure <= 12 ? 4 : exposure > 30 ? 7 : 6);
+    applyCombatSettings();
     C.phase = 'battle';
   }
   function loss() {
     if (C.phase !== 'battle') return;
+    C.m.pressure = Math.min(4, C.m.pressure + 1);
+    applyCombatSettings();
     player.clearLasers(); enemies.forEach(e => e.clearLasers());
     if (gameOver) question('final'); else question('battle');
   }
@@ -272,7 +294,8 @@ window.IOT_CAMPAIGN = (() => {
   function draw() {
     const m = C.m;
     if (C.phase === 'battle') {
-      line('L' + level + ' ' + m.source.title + ' | C: pause', 20, 76, '#f2bb05', 16); return;
+      line('L' + level + ' ' + m.source.title + ' | C: pause', 20, 520, '#f2bb05', 16);
+      line('Pressure '+m.pressure+' | Volley '+player.volleySize+' | Answer bonus '+m.answerBonus, 20, 542, '#f0f0c9', 16); return;
     }
     if (C.phase === 'title') {
       page('SPACE INVADERS: IoT DEFENCE', 'A / D: start     C: top 10');
@@ -303,8 +326,8 @@ window.IOT_CAMPAIGN = (() => {
         y = wrap('Decision: '+(r.choice||'UNDECIDED'), y+15);
         wrap('A: mitigate for $'+r.cost+' and 2h\nB: accept for $0 and 0h\nStick up/down: choose risk', y+25);
       } else {
-        let y = wrap('Question bank: 6 for this criterion. At least 3 decisions per mission.', 180);
-        y = wrap('Answered: '+m.answered.size+' / 6\nSecure answers: '+m.safe, y+20, '#f2bb05');
+        let y = wrap('Question bank: '+m.questions.length+' for this criterion. At least 3 decisions per mission.', 180);
+        y = wrap('Answered: '+m.answered.size+' / '+m.questions.length+'\nSecure answers: '+m.safe, y+20, '#f2bb05');
         wrap('A: practise a configuration decision now. You will also answer after losing a life and before the wave review.', y+25);
       }
     } else if (C.phase === 'question') {
@@ -329,12 +352,12 @@ window.IOT_CAMPAIGN = (() => {
       wrap(events[m.event], 115);
     } else if (C.phase === 'pause') {
       page('Mission paused', 'A / C: resume');
-      wrap('Score '+score+'  Lives '+player.getLives()+'\n\nTeam hours: '+m.hours+' / '+m.teamLimit+'\nBudget spent: $'+m.spent+' / $'+m.budget+'\nCurrent risk exposure: '+remainingRisk(), 120);
+      wrap('Score '+score+'  Lives '+player.getLives()+'\nPressure: '+m.pressure+'  Laser volley: '+player.volleySize+'\nTeam hours: '+m.hours+' / '+m.teamLimit+'\nBudget spent: $'+m.spent+' / $'+m.budget+'\nCurrent risk exposure: '+remainingRisk(), 120);
     } else if (C.phase === 'review') {
       const r = C.review;
       page(r.failed ? 'Mission ended: review' : 'Mission complete: review', 'A / D: continue');
-      wrap('Budget spent: $'+r.spent+' / $'+r.budget+'\nTasks Done: '+r.done+' / 3\nDelivery time: '+r.duration+'h / '+m.deadline+'h\nDeadline: '+(r.onTime?'MET':'MISSED')+'\nRisk reduced: '+r.reduced+' points\nSecurity answers: '+m.safe+' / '+m.answered.size+'\nReview bonus: '+r.bonus+'\nTotal score: '+score, 110);
-      wrap('Secure answers reduce exposure by 2; unsafe ones add 3. A negative reduction means exposure rose.', 430, '#f0f0c9', 18);
+      wrap('Budget spent: $'+r.spent+' / $'+r.budget+'\nTasks Done: '+r.done+' / 3\nDelivery time: '+r.duration+'h / '+m.deadline+'h\nDeadline: '+(r.onTime?'MET':'MISSED')+'\nRisk reduced: '+r.reduced+' points\nSecurity answers: '+m.safe+' / '+m.answered.size+'\nAnswer bonuses already paid: '+m.answerBonus+'\nReview bonus: '+r.bonus+'\nTotal score: '+score, 110);
+      wrap('Secure answers reduce exposure by 2; unsafe ones add 3. A negative reduction means exposure rose.', 450, '#f0f0c9', 18);
     } else if (C.phase === 'name') {
       page(gameWon ? 'YOU WIN! Enter arcade name' : 'GAME OVER: enter arcade name', 'Stick: letter  A: add  B: erase  D: submit');
       wrap('Score: '+score+'\nMissions cleared: '+C.completed+' / 10\n\nName: '+C.name+'_'+ '\nNext character: [ '+alphabet[C.letter]+' ]\n\nUse 3-8 letters/numbers.', 112);

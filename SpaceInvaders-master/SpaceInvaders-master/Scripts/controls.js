@@ -19,8 +19,8 @@ window.IOT_INPUT = (() => {
   window.addEventListener("blur", () => held.clear());
   let padHeld = {};
   function poll(now) {
-    const pad = navigator.getGamepads && Array.from(navigator.getGamepads()).find(Boolean);
     const g = IOT_CONFIG.gamepad;
+    const pad = g.enabled && navigator.getGamepads && Array.from(navigator.getGamepads()).find(Boolean);
     const current = {};
     if (pad) {
       const ax = pad.axes[g.axisX] || 0, ay = pad.axes[g.axisY] || 0;

@@ -283,6 +283,7 @@ class Player extends Character {
     super(x, y, dx, 0, width, height, color, 2, false, 9, imgSrc, srcX, srcY, srcWidth, srcHeight);
 
     this.lives = 5;
+    this.volleySize = 1;
     this.ogSrcX = srcX;
     this.ogSrcY = srcY;
     this.ogSrcWidth = srcWidth;
@@ -298,7 +299,13 @@ class Player extends Character {
   // add laser and player sound effect
   addLaser() {
     let laserCount = this.lasers.length;
-    super.addLaser();
+    // Correct security answers unlock parallel beams from one original fire press.
+    const count = Math.min(this.volleySize, this.laserTotal - this.lasers.length);
+    for (let beam = 0; beam < count; beam++) {
+      const spacing = 12;
+      const x = this.x + this.width / 2 - 3 + (beam - (count - 1) / 2) * spacing;
+      this.lasers.push(new Laser(x, this.y, this.bulletSpeed, 6, 6, false));
+    }
 
     if (this.lasers.length > laserCount) {
       playSounds(shoot);
