@@ -2,16 +2,21 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>Space Invaders</title>
-    <link href="https://fonts.googleapis.com/css?family=Audiowide|Press+Start+2P" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#000000">
+    <title>Space Invaders — IoT Defence</title>
     <link rel="stylesheet" href="Styles/main.css">
-    <link rel="icon" href="http://www.unixstickers.com/image/cache/data/stickers/spaceinvaders/Space-medium-invader.sh-600x600.png">
   </head>
   <body>
-    <canvas id="background-canvas"></canvas>
-    <canvas id="game-canvas" width="700" height="600"></canvas>
-
-    <script type="text/javascript" src="Scripts/background.js"></script>
-    <script type="text/javascript" src="Scripts/script.js"></script>
+    <canvas id="background-canvas" aria-hidden="true"></canvas>
+    <canvas id="game-canvas" width="700" height="600" aria-label="Space Invaders IoT Defence. Use arrow keys and A B C D buttons."></canvas>
+    <script src="Scripts/config.js"></script>
+    <script src="Scripts/missions.js"></script>
+    <script src="Scripts/question-bank.js"></script>
+    <script src="Scripts/controls.js"></script>
+    <script src="Scripts/leaderboard.js"></script>
+    <script src="Scripts/campaign.js"></script>
+    <script src="Scripts/background.js"></script>
+    <script src="Scripts/script.js"></script>
   </body>
 </html>

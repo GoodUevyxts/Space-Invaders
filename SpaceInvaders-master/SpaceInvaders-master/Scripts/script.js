@@ -89,7 +89,7 @@ let playSounds = function(sound) {
     sound.pause();
     sound.currentTime = 0;
   }
-  if (sound.paused) sound.play();
+  if (sound.paused) sound.play().catch(() => {});
 }
 
 let drawBackground = function() {
@@ -155,7 +155,7 @@ class GamePiece {
     // be default, draw a rectangle
     context.fillStyle = this.color;
     context.beginPath();
-    context.fillRect(this.x, this.y, this.height, this.width);
+    context.fillRect(this.x, this.y, this.width, this.height);
     context.fill();
   }
 }
@@ -225,21 +225,9 @@ class Character extends GamePiece {
 
   //remove lasers from the characther's laser array as they disappear from the screen
   removeLasers() {
-    let removeLasers = [];
-    let lasersToRemove = 0;
-    for (let i = 0; i < this.lasers.length; i++) {
-      this.lasers[i].update();
-
-      if ((!this.enemy && this.lasers[i].getY() <= 50) ||
-          (this.enemy && this.lasers[i].getY() >= canvas.height)) {
-
-        lasersToRemove++;
-      }
-    }
-
-    for (let i = 0; i < lasersToRemove; i++) {
-      this.lasers.shift();
-    }
+    for (const laser of this.lasers) laser.update();
+    this.lasers = this.lasers.filter(laser => !laser.getHit() &&
+      (this.enemy ? laser.getY() < canvas.height : laser.getY() > 50));
   }
 
   //if an image for the sprite hasn't been passed in, draw a rectangle. otherwise, draw the sprite
@@ -548,6 +536,13 @@ let level3 = function() {
 levels.push(level1);
 levels.push(level2);
 levels.push(level3);
+// Seven additional missions reuse the original wave constructor, with bounded speed.
+for (let mission = 4; mission <= 10; mission++) {
+  levels.push(function() {
+    level = mission;
+    createEnemies(Math.min(4.6, 4 + (mission - 3) * 0.1));
+  });
+}
 
 // initialize the start of the game
 let init = function() {
@@ -576,7 +571,7 @@ let laserHitCheck = function() {
     for (let j = 0; j < enemies.length; j++) {
       if (playerLasers[i].getX() >= enemies[j].getX() && playerLasers[i].getX() + playerLasers[i].getWidth() <= enemies[j].getX() + enemies[j].getWidth() &&
           playerLasers[i].getY() >= enemies[j].getY() && playerLasers[i].getY() + playerLasers[i].getHeight() <= enemies[j].getY() + enemies[j].getHeight() &&
-          !enemies[j].getHit()) {
+          !enemies[j].getHit() && !playerLasers[i].getHit()) {
         playerLasers[i].clear();
 
         score += 100;
@@ -587,7 +582,7 @@ let laserHitCheck = function() {
 
   //check if enemy hit the player
   for (let i = 0; i < enemyLasers.length; i++) {
-    if (enemyLasers[i].getX() >= player.getX() && enemyLasers[i].getX() + enemyLasers[i].getWidth() <= player.getX() + player.getWidth() &&
+    if (!gamePaused && !gameOver && !enemyLasers[i].getHit() && enemyLasers[i].getX() >= player.getX() && enemyLasers[i].getX() + enemyLasers[i].getWidth() <= player.getX() + player.getWidth() &&
       enemyLasers[i].getY() >= player.getY() && enemyLasers[i].getY() + enemyLasers[i].getHeight() <= player.getY() + player.getHeight()) {
         enemyLasers[i].clear();
 
@@ -753,67 +748,42 @@ let playEnemyMovementSounds = function() {
 
 //funtion that's run to play game
 //updates all of the necessary components to keep game running
-let gameLoop = function() {
+// A fixed 60 Hz simulation preserves the original frame-based speeds on any display.
+let previousFrame = 0;
+let simulationBank = 0;
+let gameLoop = function(now) {
   requestAnimationFrame(gameLoop);
-  drawBackground();
-  if (!gameWon && !gameOver) {
-    player.update(activeKey);
-    moveAllEnemiesDownCheck();
-    for (let i = 0; i < enemies.length; i++) {
-      enemies[i].update();
+  IOT_INPUT.poll(now);
+  if (IOT_CAMPAIGN.state.phase !== "battle") {
+    previousFrame = now; simulationBank = 0;
+    IOT_CAMPAIGN.draw();
+    return;
+  }
+  const elapsed = previousFrame ? Math.min(83, now - previousFrame) : 16.67;
+  previousFrame = now;
+  simulationBank += elapsed;
+  if (simulationBank < 1000 / 60) return;
+  while (simulationBank >= 1000 / 60 && IOT_CAMPAIGN.state.phase === "battle") {
+    simulationBank -= 1000 / 60;
+    drawBackground();
+    IOT_CAMPAIGN.tick();
+    activeKey = IOT_INPUT.down("right") ? 39 : IOT_INPUT.down("left") ? 37 : -1;
+    if (!gameWon && !gameOver) {
+      player.update(activeKey);
+      moveAllEnemiesDownCheck();
+      for (const enemy of enemies) enemy.update();
+      laserHitCheck();
     }
-    laserHitCheck();
+    if (gameOver || gamePaused) IOT_CAMPAIGN.loss();
+    else if (numOfEnemies === 0) IOT_CAMPAIGN.cleared();
+    playEnemyMovementSounds();
   }
   drawScore();
   drawLives();
-  checkGamePaused();
-  endOfLevelCheck();
-  checkGameOver();
-  playEnemyMovementSounds();
-}
+  IOT_CAMPAIGN.draw();
+};
 
-
-/* Runs before game begins to execute */
-drawStart();
-//Sets an interval to run the drawStart function
-var presStart = setInterval(drawStart, 400);
-
-
-/* Event Listeners */
-//spaceDown is used to ensure that the keypress event doesn't cause the function that runs when the sapce bar is pressed to be called multiple times
-let spaceDown = false;
-
-//sets what key is currently being pressed down (used in player's update function)
-document.addEventListener("keydown", (event) => {
-  if (!gamePaused && (event.keyCode === 39 || event.keyCode === 37))
-    activeKey = event.keyCode;
-});
-
-document.addEventListener("keypress", (event) => {
-  if (event.keyCode === 32 && spaceDown == false && player != undefined && !gamePaused && !gameOver && !gameWon) {
-    player.addLaser();
-    spaceDown = true;
-  }
-  //press enter either before the game starts or if the game has ended
-  else if (event.keyCode === 13) {
-    // if game hasn't started, initialize and begin the game loop
-    if (!gameStart) {
-      clearInterval(presStart);
-      init();
-      gameLoop();
-      gameStart = true;
-    }
-    else if (gameOver || gameWon) {
-      gameOver = false;
-      gameWon = false;
-      init();
-    }
-  }
-});
-
-//removes active key so that the player doesn't keep moving after the arrow keys have been released
-document.addEventListener("keyup", (event) => {
-  if (event.keyCode === 39 || event.keyCode === 37)
-    activeKey = -1;
-  if (event.keyCode === 32) spaceDown = false;
-});
+// The single router also handles the original arrow/Space/Enter keys.
+IOT_INPUT.bind(IOT_CAMPAIGN.input);
+void IOT_LEADERBOARD.start();
+requestAnimationFrame(gameLoop);
