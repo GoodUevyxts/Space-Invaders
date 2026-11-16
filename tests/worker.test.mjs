@@ -18,6 +18,11 @@ test('v2 bonuses have distinct bounds while queued v1 scores remain valid',()=>{
   assert.throws(()=>validateScore({...base,build:'iot-v2',score:59600,completed:10}));
   assert.throws(()=>validateScore({...base,score:59500,completed:10}));
 });
+test('restored shooter has three waves and its own bounded score format',()=>{
+  assert.equal(validateScore({...base,build:'iot-shooter-v1',score:13500,completed:3}).score,13500);
+  assert.throws(()=>validateScore({...base,build:'iot-shooter-v1',score:13600,completed:3}));
+  assert.throws(()=>validateScore({...base,build:'iot-shooter-v1',completed:4}));
+});
 test('a retry is idempotent and an ID collision cannot replace an accepted score', () => {
   const first = addScore(empty(), base);
   assert.equal(first.board.entries.length,1);

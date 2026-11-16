@@ -10,7 +10,7 @@ export const CRITERIA = [
   ['strong-credentials', 'Strong credentials'], ['certificate-management', 'Certificate management'],
   ['network-segmentation', 'Network segmentation'], ['firewall-configuration', 'Firewall configuration'],
   ['secure-topic-design', 'Secure topic design'], ['input-validation', 'Input validation']
-].map(([id,title],i) => ({id,title,mission:i+1}));
+].map(([id,title],i) => ({id,title,category:i+1}));
 export const CriterionSchema = z.enum(CRITERIA.map(c=>c.id));
 export const DifficultySchema = z.enum(['beginner','intermediate','advanced']);
 const text = (min,max) => z.string().trim().min(min).max(max).refine(s=>!/[\u0000-\u001f\u007f]/u.test(s),'Use a single printable line');
@@ -109,7 +109,7 @@ export class QuestionStore {
     return CRITERIA.map((criterion,i)=>({ ...criterion,objective:missions[i].objective,
       baseQuestions:missions[i].decisions.length,
       generatedQuestions:published.entries.filter(q=>q.criterion===criterion.id).length,
-      status:'implemented in game source; physical Pi testing separate'
+      status:'question category available after enemy-bullet life loss'
     }));
   }
   async validate(criterion,questions,{allowDraftId}={}) {

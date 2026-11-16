@@ -1,31 +1,48 @@
 @font-face {
-  font-family: "Press Start 2P";
+  font-family: "PressStart2P";
   src: url("../fonts/PressStart2P.ttf");
-  font-display: swap;
 }
-html, body { width: 100%; height: 100%; overflow: hidden; }
+
+html, body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: black;
-  color: white;
-  overscroll-behavior: none;
 }
-canvas { font-family: "Press Start 2P", monospace; }
+
+canvas {
+  font-family: "PressStart2P";
+}
+
 #game-canvas {
   outline: 1px solid white;
-  width: min(100vw, 116.6667vh);
-  height: min(100vh, 85.7143vw);
-  object-fit: contain;
-  image-rendering: pixelated;
 }
+
 #background-canvas {
-  border: 0;
+  border: 1px solid black;
   width: 100%;
   height: 100%;
-  position: fixed;
-  inset: 0;
+  position: absolute;
   z-index: -1;
 }
+
+/* Fit the original canvas and the small login form on the Pi display. */
+@font-face { font-family: "Press Start 2P"; src: url("../fonts/PressStart2P.ttf"); }
+body { background: black; color: white; overflow: hidden; }
+[hidden] { display: none !important; }
+#game-canvas { width: min(100vw, 116.6667vh); height: min(100vh, 85.7143vw); }
+#login-panel { box-sizing: border-box; width: min(94vw, 620px); max-height: 96vh; overflow: auto; padding: 18px; background: black; border: 1px solid white; font-family: monospace; font-size: 16px; }
+#login-panel h1 { font-size: 22px; }
+#login-form { display: grid; gap: 8px; }
+#login-form input, #login-form button { box-sizing: border-box; padding: 9px; font: 18px monospace; }
+#login-form input:focus { outline: 3px solid #f2bb05; }
+#login-error { color: #f2bb05; min-height: 20px; margin: 0; }
+.login-help { font-size: 14px; line-height: 1.5; }
+#login-panel h1 { margin: 0 0 12px; }
+#login-panel p { margin: 10px 0; }
+#login-form { gap: 6px; }
+#login-form input, #login-form button { padding: 6px; }

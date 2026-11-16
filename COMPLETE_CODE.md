@@ -1,6 +1,6 @@
-# Complete copy-and-paste files
+# Complete current files
 
-Each heading is an exact path relative to the repository root. Replace changed files in full and create added files at the shown paths. Keep original runtime assets and unchanged scripts. See GAME_UPGRADE.md for game installation and Render/Worker setup, MCP_QUESTIONS.md for the new question-generation server and JSON configuration, and CRITERIA_STATUS.md for implementation versus deployment status. No token or AI key is included.
+The game is the original three-wave shooter with a user/user training login and a small question overlay triggered only by enemy-bullet life loss. Answers use 1-4. Paths are relative to the repository root. See GAME_UPGRADE.md for the current flow. Delete the old Scripts/campaign.js and Scripts/controls.js from the nested game folder when updating a local copy; they are no longer used.
 
 ## .gitignore
 
@@ -20,142 +20,103 @@ mcp.local.toml
 ## CRITERIA_STATUS.md
 
 ```markdown
-# Implementation and deployment status
+# Current game scope
 
-The linked repository originally contained a plain three-wave shooter and no IoT criteria or question bank. The ten missions, 60 base questions and project scenes have been added around that shooter. All ten security criteria are implemented in source; none needs a duplicate mission.
+The game uses the original three shooter waves. The ten security criteria are question categories in the shared bank, not ten additional levels or a mandatory campaign. A question appears only after an enemy bullet removes a life. Players who clear a wave without being shot do not get a question.
 
-| Criterion | Mission | Existing upgrade questions | New MCP generation/export |
-|---|---:|---:|---|
-| Authentication | 1 | 6 | Supported |
-| Authorisation | 2 | 6 | Supported |
-| TLS encryption | 3 | 6 | Supported |
-| Access Control Lists | 4 | 6 | Supported |
-| Strong credentials | 5 | 6 | Supported |
-| Certificate management | 6 | 6 | Supported |
-| Network segmentation | 7 | 6 | Supported |
-| Firewall configuration | 8 | 6 | Supported |
-| Secure topic design | 9 | 6 | Supported |
-| Input validation | 10 | 6 | Supported |
+| Security criterion | Questions in base bank | MCP generation |
+|---|---:|---|
+| Authentication | 6 | Supported |
+| Authorisation | 6 | Supported |
+| TLS encryption | 6 | Supported |
+| Access Control Lists | 6 | Supported |
+| Strong credentials | 6 | Supported |
+| Certificate management | 6 | Supported |
+| Network segmentation | 6 | Supported |
+| Firewall configuration | 6 | Supported |
+| Secure topic design | 6 | Supported |
+| Input validation | 6 | Supported |
 
-The project brief, constrained Kanban, likelihood x impact risk register, random events, decision explanations and level reviews are implemented. The game uses arrow-key movement and A/B/C/D question selection. Version iot-v2 adds immediate correct-answer bonuses, two-/three-laser volleys and bounded pressure changes after life loss and decisions.
+The `user` / `user` login is a requested training demonstration; it is not strong authentication. Question selection uses number keys 1-4, replacing A-D. The enlarged planning/campaign screens have been removed from the active game; the previous implementation remains on `codex/iot-security-campaign`.
 
-The leaderboard Worker, score validation, top-ten display, duplicate-resistant submissions and offline outbox are implemented. The dedicated GitHub `scores` branch contains the initial leaderboard file. Real submissions still require deploying the Worker, setting its Cloudflare-only GitHub secret and allowed origins, and entering its public URL in the game. The game must then be merged into Render's deployed branch or deployed from the reviewed branch. These external setup steps are not completed by having source code or passing local tests.
-
-The new MCP server and JSON client template are implemented. Its actual stdio protocol is tested with an SDK client. Connecting it to your chosen desktop AI client still requires adding the generated configuration there. See MCP_QUESTIONS.md. The original Pi question bank was not supplied, so exact older questions cannot be claimed as preserved.
-
-Physical Pi/controller performance, live Cloudflare/GitHub score commits and the production Render deployment must be verified in their real environments. See GAME_UPGRADE.md for setup; no token should be sent in chat or placed on the Pi.
+The MCP server, configuration template, offline question exports, optional leaderboard and offline outbox remain. A live leaderboard still needs the Cloudflare Worker deployed and its public URL configured. The original end screen opens optional score saving with button 3. See GAME_UPGRADE.md for the actual current flow and deployment instructions.
 ```
 
 ## GAME_UPGRADE.md
 
 ````markdown
-# Space Invaders IoT upgrade
+# Original Space Invaders with small additions
 
-This extends commit `df21dc9f46b9453034a17720494ddfab846faa1a` of GoodUevyxts/Space-Invaders. The original Player, Enemy, Character, GamePiece and Laser classes, sprites, sound effects, movement, shooting, hit scoring, five starting lives and first three wave constructors remain. Seven more waves reuse the original enemy factory. Security and project scenes surround those waves. None of the ten security criteria existed in the supplied repository, so all ten are additions. The original repository contains no question-after-death code or older question bank; these additions cannot preserve questions that were not present there.
+The playable game has been restored around the original three-wave shooter from commit `df21dc9f46b9453034a17720494ddfab846faa1a`. It uses the original ship, invaders, sprite sheet, sounds, movement, collision code and level constructors. The expanded ten-mission campaign and planning screens have been removed from the active game. That earlier work is preserved on `codex/iot-security-campaign`.
 
-## Exact repository changes
+## Flow
 
-The existing game directory is `SpaceInvaders-master/SpaceInvaders-master/` (called GAME below).
+1. Log in with username `user` and password `user`.
+2. Start the original shooter with Enter or button 4.
+3. Shoot invaders and progress through the original three waves.
+4. Only an invader bullet can remove a life. One hit removes one life, deducts 1,100 points and pauses for exactly one security question.
+5. Answer using keys 1, 2, 3 or 4. Read the short explanation and press a numbered button to resume shooting. A hit that removes the final life still gets its one question, followed by the original Game Over screen.
 
-| Action | Path | Purpose |
-|---|---|---|
-| Change | GAME/index.html | Loads additions around the existing scripts and canvases |
-| Change | GAME/Scripts/script.js | Preserves original shooter; integrates scene flow, ten waves and input router; fixes cleared-laser collisions and laser cleanup |
-| Change | GAME/Styles/main.css | Fits the original 700x600 canvas on a 7-inch screen; fixes font naming |
-| Add | GAME/Scripts/config.js | Public endpoint and configurable A/B/C/D mappings |
-| Add | GAME/Scripts/controls.js | Keyboard emulation and optional Gamepad fallback |
-| Add | GAME/Scripts/missions.js | Ten criteria and 20 base questions |
-| Add | GAME/Scripts/question-bank.js | 40 additional questions, four answers each |
-| Add | GAME/Scripts/generated-questions.js | Offline export of approved MCP questions |
-| Add | GAME/data/generated-questions.json | Published generated-question source data |
-| Add | GAME/Scripts/campaign.js | Briefs, Kanban, risk register, events, questions, reviews, name entry |
-| Add | GAME/Scripts/leaderboard.js | IndexedDB score outbox, cached top ten and automatic retries |
-| Add | serverless/src/worker.js | Validated submission and GitHub commits, with serialized writes |
-| Add | serverless/package.json | Worker commands and dependencies |
-| Add | serverless/package-lock.json | Reproducible Worker dependencies |
-| Add | serverless/wrangler.toml | Cloudflare configuration; public settings only |
-| Add | leaderboard.json | Initial empty board; copy to the dedicated scores branch |
-| Add | tests/worker.test.mjs | Validation, retry, conflict, rate and ranking checks |
-| Add | tests/browser.cjs | Browser flow and offline persistence checks |
-| Add | .gitignore | Excludes local secrets, dependencies and unpublished drafts |
-| Add | mcp.json | MCP client JSON template |
-| Add | mcp/ | Question-generation server, config generator, dependency lock and protocol tests |
-| Add | MCP_QUESTIONS.md | MCP setup and generation/review/export workflow |
-| Add | CRITERIA_STATUS.md | Source implementation versus deployment status |
-| Add | GAME_UPGRADE.md | This guide |
+There are no questions at startup, between waves or on victory. Surviving invaders that reach the bottom recycle to their original row heights without removing a life or opening a question.
 
-Keep the existing `Scripts/background.js`, `Images/`, `sounds/`, `fonts/`, `error.html`, existing README files and other assets. Keep the MIT licence; a copy is included at the repository root because it accompanied the supplied files. The download archive includes original runtime assets too.
+## Controls
 
-## Software to install
+Map the four JoyToKey buttons to **1, 2, 3 and 4**, replacing the earlier A-D mapping. The top-row number keys and numeric keypad both work.
 
-On the Pi, use Raspberry Pi OS with Chromium and Python 3. No Node, npm, AI service, MCP, GitHub token or new controller driver is needed for the game. On Raspberry Pi OS versions with those package names:
+| Screen | Controls |
+|---|---|
+| Login | Keyboard entry, or stick up/down selects a character; left/right selects a field; 1 adds; 2 erases; 3 changes field; 4 logs in |
+| Original title | Enter or 4 starts |
+| Shooter | Left/right moves; Space or 1 fires |
+| Question after a hit | 1, 2, 3 or 4 selects that answer |
+| Explanation | Any numbered button, Space or Enter returns to shooting |
+| Original end screen | Enter or 4 restarts; 3 optionally opens score saving |
+| Arcade name | Stick cycles characters; 1 adds; 2 erases; 4 submits; 3 goes back |
+| Top ten | 2 retries queued uploads; 4 returns to the original end screen |
 
-```sh
-sudo apt update
-sudo apt install chromium python3 git
-```
+The requested `user` / `user` login is a browser-side training demonstration. It is not production authentication and does not protect publicly served source files.
 
-Keep your existing controller-to-keyboard setup. JoyToKey is a Windows application; if your current setup runs it on a separate machine, under a compatibility layer or through another mapper on the Pi, preserve that working arrangement. The game consumes the resulting keyboard events. Installing JoyToKey natively on Raspberry Pi OS is not part of this upgrade.
+## Points and difficulty
 
-Serve the local game on a stable origin so saved scores persist between launches:
+Original enemy-hit scoring remains +100. An enemy-bullet hit deducts 1,100 points, removes one life and raises bounded pressure. A correct answer gives +100, lowers pressure and upgrades the parallel laser volley to two beams after the first correct answer and three after the second. Pressure modifies enemy movement and firing gently and is bounded. Clearing a wave gives a one-time 500-point bonus; it does not open a review screen. Restart begins with the original five lives.
+
+The game identifies scores as `iot-shooter-v1`, with three completed waves maximum. The Worker also accepts previously queued `iot-v1` and `iot-v2` scores under their earlier limits. Question categories do not create extra shooter levels.
+
+## Files
+
+All game paths below are inside `SpaceInvaders-master/SpaceInvaders-master/`.
+
+| File | Change |
+|---|---|
+| `index.html` | Original canvases and shooter entrypoint, plus login and small add-ons |
+| `Scripts/script.js` | Original shooter with an enemy-bullet question hook and numeric button aliases |
+| `Styles/main.css` | Original styling, Pi canvas scaling and login styling |
+| `Scripts/login.js` | Requested user/user login |
+| `Scripts/death-quiz.js` | Hit-only question overlay, explanations and small rewards |
+| `Scripts/arcade-leaderboard.js` | Optional score saving from the original end screen |
+| `Scripts/config.js` | Public Worker URL and score build ID |
+| `Scripts/missions.js`, `Scripts/question-bank.js` | Existing bank of 60 questions across ten criteria |
+| `Scripts/generated-questions.js`, `data/generated-questions.json` | Approved offline MCP question exports |
+| `Scripts/leaderboard.js` | Existing IndexedDB queue and retry logic |
+
+`Scripts/campaign.js` and `Scripts/controls.js` have been removed. The original `background.js`, images, sounds and fonts remain. Root `mcp.json`, `mcp/`, `MCP_QUESTIONS.md`, `serverless/` and `leaderboard.json` remain available. `COMPLETE_CODE.md` contains complete current files.
+
+## Run on the Pi
+
+Install Chromium, Python 3 and Git if missing. Keep the existing controller mapper, changing its four button outputs to 1-4.
 
 ```sh
 cd Space-Invaders/SpaceInvaders-master/SpaceInvaders-master
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-Open `http://localhost:8000` in Chromium. For kiosk use, run in another terminal:
+Open `http://localhost:8000` in Chromium. The game itself needs no Node, MCP process, AI key or GitHub token. Use a persistent browser profile and the same origin to preserve queued scores.
 
-```sh
-chromium --kiosk http://localhost:8000
-```
+## GitHub and Render
 
-Use `localhost` consistently: `localhost`, `127.0.0.1`, different ports and Render are different browser storage origins. Do not use `file://`, Incognito, or clear site data if you want queued scores to survive. Serve only the game directory on the Pi, not the repository root or serverless folder. Local static files support offline play; a Render page needs an internet connection for its initial load. This version does not add a service worker.
+The updated playable files belong on `main`. For a Render Static Site with repository-root service settings, publish `SpaceInvaders-master/SpaceInvaders-master`; if the service root is already that directory, publish `.`. A build command such as `echo static-game` is sufficient. Deploy the latest main commit, then reload the page. Keep the score-data branch separate from the deployed game branch.
 
-For Worker setup on a development computer, install a current supported Node LTS (Node 22.12+ or Node 24), npm, and have a Cloudflare account. Wrangler is installed as a project dependency below. Cloudflare account availability and any plan limits must support a SQLite-backed Durable Object. You do not need to install this tooling on the Pi.
-
-## Controller mapping
-
-Your stick emits all four arrow keys. Your four buttons emit letters A, B, C and D. Configure uppercase/lowercase normally in the mapper: the game uses physical browser codes `KeyA` through `KeyD`.
-
-| Screen | Stick | A | B | C | D |
-|---|---|---|---|---|---|
-| Title | — | Start | — | Top ten | Start |
-| Planning | Up/down selects; left/right changes tab | Start/complete task, mitigate risk or practise question | Return Doing task / accept selected risk | Next tab | Launch |
-| Question | Highlight an answer | Answer 1 | Answer 2 | Answer 3 | Answer 4 |
-| Explanation | — | Continue | — | — | Continue |
-| Event | — | First response | Second response | — | — |
-| Shooter | Left/right moves | Shoot | — | Pause | — |
-| Pause | — | Resume | — | Resume | — |
-| Review | — | Continue | — | — | Continue |
-| Name entry | Cycle character | Add character | Delete character | — | Submit |
-| Top ten | — | New game | Retry uploads | — | New game |
-
-Space remains a fire/confirm alias for A; Enter remains a start/continue/submit alias for D; Escape aliases B. On a question screen those aliases also choose their numbered answer. Arrows highlight for orientation, but the four answer buttons select directly, as requested. No mouse or touch is needed. Change the key arrays in `Scripts/config.js` if your emitted keys differ. Optional browser Gamepad input is disabled by default so JoyToKey does not double-trigger actions. Set `gamepad.enabled` to true only when using direct Gamepad input instead of keyboard emulation.
-
-## Gameplay and project management
-
-Each mission starts with an objective, budget ($1,400 on missions 1-3, $1,200 thereafter), team capacity (18 hours), and deadline (12-14 simulated hours). The Kanban board has To Do, Doing and Done states and a Doing limit of one. Starting a task places it in Doing; completing it spends its stated money and hours. B returns a Doing task to To Do. Completion cannot exceed capacity. Two completed tasks add one extra simultaneous-laser slot. Correct answers also unlock multi-laser volleys as described below. Undelivered tasks remain visible and earn no review bonus.
-
-Two risk entries start at likelihood x impact: 4x5=20 and 3x4=12. A mitigation costs money and two hours, lowers likelihood to one, and leaves impact unchanged. B explicitly accepts the exposure. Both risks must be decided before launch; you can launch with accepted risk or unfinished tasks. There is a short explanation after every consequential task, security, risk and event decision.
-
-Each mission draws one random event at launch: added scope, a budget cut, a security incident, or a quiet window. A/B responses trade scope, money, deadline and risk. A budget cut cannot retroactively remove money already spent. There is no real-money spending.
-
-Each criterion starts with six distinct questions (60 total), plus any approved MCP exports; question order and four answer positions are shuffled every mission. Questions appear after losing a life, including the final life. At least three different questions must be answered before the mission review, so clearing a wave without being hit still covers the criterion. The Security planning tab also offers questions. A secure answer reduces exposure by two points (with total exposure floored at zero). A wrong answer remains recorded and adds three exposure points; the explanation teaches the correct principle. Once every question in that mission bank is answered, later life losses use practice questions without changing the original result or awarding more points. This prevents farming repeated questions for bonuses.
-
-Lower exposure sets a slower base enemy-bullet speed (4/6/7 pixels per simulation tick). A separate pressure value modifies enemy movement, shooting frequency and bullet speed: losing a life or giving a fresh wrong answer adds one pressure point; a fresh correct answer removes one. Pressure is bounded from -3 to +4 and resets for each mission. Each point changes formation speed by 6%, firing frequency by about 5%, and bullet speed by 0.3 pixels/tick, with a bullet-speed cap. Negative pressure is easier; positive pressure is harder. Normal enemy speed is retained for waves 1-3 and rises gently, with a cap, for waves 4-10. Menus and questions pause all combat and its clock. Shooter simulation runs at 60 ticks/second, preserving its frame-based movement across display refresh rates. Menus do not need a time limit on the small screen.
-
-Review shows actual spending, tasks delivered, deadline met/missed and change in risk. Time is completed task/mitigation/event effort plus one simulated hour per 15 seconds of active combat. Security questions do not consume team hours. Risk reduction is the initial 32 exposure points minus current exposure, including security-answer reductions and wrong-answer additions. A negative reduction means risk increased. Deadline performance is assessed even on a failed mission; failure itself is shown separately.
-
-Original scoring remains +100 per enemy hit and -1,100 per lost life. Each of the first six fresh correct answers in a mission immediately adds 100 points, even if that wave is later lost; further questions still affect pressure and exposure but add no more answer points. Repeating an answered question gives no point or pressure reward. The first fresh correct answer unlocks a two-laser parallel volley from one fire press; the second unlocks a three-laser volley. Two volleys can be on screen at once, with an extra laser slot for completing two Kanban tasks. Weapons are recalculated per mission. A cleared wave adds a separate review bonus of up to 700: 100 each for the first three secure answers, 100 per delivered task, and 100 when risk fell and the deadline was met. A failed wave earns no review bonus. Three secure answers restore one life after a cleared wave, capped at five. The iot-v2 maximum full-campaign score is 59,500: 46,500 from enemy hits, up to 6,000 immediate answer bonuses and up to 7,000 review bonuses. The Worker also accepts queued iot-v1 scores under their older 53,500 maximum. On failure or victory, enter a 3-8 character arcade name using the stick and A, then submit with D.
-
-## GitHub leaderboard and Cloudflare Worker
-
-No GitHub credential belongs in the game, Pi files, Render static-site variables, repository, `config.js`, or browser storage. Only the public Worker URL belongs in the game. The Worker must be deployed separately from the Render frontend.
-
-1. Create a dedicated `scores` branch in `GoodUevyxts/Space-Invaders`. Put the supplied root `leaderboard.json` there. Keep score commits off the branch that Render deploys; this avoids redeploying the game after every score. `GITHUB_PATH` is `leaderboard.json` at repository root, **not** the nested game directory. If a scores branch was included with the delivered change, use that existing branch.
-2. In GitHub's fine-grained personal access token settings, create a token limited to this repository, with **Contents: read and write**. Set an appropriate expiry and renewal reminder. A GitHub App installation token can also be used if you implement its renewal separately. This implementation reads the configured secret as a token; it does not renew expiring tokens.
-3. On the development computer, configure and deploy:
+The optional leaderboard still needs its separate Cloudflare Worker setup:
 
 ```sh
 cd Space-Invaders/serverless
@@ -164,60 +125,19 @@ npx wrangler login
 npx wrangler secret put GITHUB_TOKEN
 ```
 
-Paste the token only at that secret prompt. Do not place it in a shell command, chat, source file or the Pi. The secret is stored by Cloudflare. Do not commit `.dev.vars`.
+Enter the token only at the Cloudflare prompt, never in chat or on the Pi. Restrict the GitHub token to this repository with Contents read/write. In `wrangler.toml`, use the existing `scores` branch, root `leaderboard.json`, and exact allowed localhost/Render origins. Deploy the updated Worker with `npm run deploy`, then put only its public HTTPS URL in `Scripts/config.js`. With no URL configured, scores remain local. Numeric validation is not proof of honest play.
 
-4. Edit `serverless/wrangler.toml`: keep the repository, scores branch and root path correct. Add the exact Render origin to `ALLOWED_ORIGINS`, for example `https://YOUR-GAME.onrender.com`. Separate origins with commas; no paths or trailing slashes. The two local port-8000 origins are already listed. Preview origins must be added explicitly if used.
-5. Validate and deploy:
-
-```sh
-npm test
-npm run check
-npm run deploy
-```
-
-6. Set `GAME/Scripts/config.js` `leaderboardUrl` to the resulting HTTPS Worker URL. Commit that public URL and redeploy the game. No client secret is required.
-
-The Worker limits POST bodies to 1,024 bytes; usernames to `[A-Z0-9]{3,8}`; IDs to canonical version-4 UUIDs; builds to `iot-v1` or `iot-v2`; and mission counts to 0-10. Scores must be integers divisible by 100 within the build-specific maximum for the submitted cleared-wave count (including up to 600 answer points for an in-progress v2 wave), with a lower bound of -20,000. Server timestamps are generated on receipt.
-
-A single Durable Object serializes board operations. GitHub writes include the current blob SHA and retry conflicts up to three times. The submission UUID is stored in the JSON entry: retries return the original acknowledgement rather than creating another score. Reusing an ID for different data is rejected. An IP-based 30 requests/minute limit includes reads and writes. CORS restricts browser origins. Neither CORS nor numeric validation proves that someone played honestly: this is an educational arcade leaderboard, not a cheat-proof competition. A public client can fabricate a plausible score. Competitive anti-cheat needs server-authoritative play or separately verified trusted results; no secret stored on a Pi could fix that.
-
-The JSON schema is `{ "version": 1, "entries": [...] }`. All accepted entries are retained up to 2,000 so duplicate IDs remain detectable; the game displays only the sorted top ten. On reaching capacity, the Worker returns a retryable 503 and scores remain on the Pi. Before capacity is reached, an operator should archive the board and deliberately migrate to a new season/build/branch; do not silently truncate entries, which would remove retry deduplication. Do not manually remove IDs while old Pi queues might retry them. An already accepted retry can still be acknowledged at capacity.
-
-GitHub failures, expired tokens, rate limits, Worker failures or offline networking leave scores in IndexedDB. The client saves a score transactionally before any POST and removes it only after an acknowledgement containing the matching ID. It retries at startup, when networking returns, every 60 seconds and with B on the leaderboard. Failed 400/409/413/422 submissions remain locally marked for operator investigation; they are not endlessly resent. Server-unavailable and 429 responses retry later. The cached top ten is shown offline. Clearing browser storage, using an ephemeral kiosk profile, changing origins or SD-card loss can remove local data; keep a persistent Chromium profile. A storage failure shows NOT SAVED and leaves name entry available to retry.
-
-## Updating questions on Render
-
-Edit `GAME/Scripts/missions.js` or `GAME/Scripts/question-bank.js` in GitHub, or generate and review additions using `MCP_QUESTIONS.md`, commit to the deployed branch and use Render's auto deploy or Manual Deploy > Deploy latest commit. No Worker redeploy is required for wording or question changes. Deploy the updated Worker when first upgrading the game to iot-v2 so the new answer bonuses are accepted; old queued v1 submissions remain supported. Keep exactly four choices and one correct choice per question, and provide a short reason for every answer. If score rules change, update both client scoring and Worker validation/build together.
-
-This is plain HTML/CSS/JS: use an existing Render **Static Site**, with the nested GAME directory as its publish path. If the Render service root is the repository root, the publish path is `SpaceInvaders-master/SpaceInvaders-master`; a harmless build command is `echo static-game`. If its root directory is already the nested GAME directory, publish `.`. Keep the deployed branch as `main` (or your chosen reviewed code branch), never `scores`. If using a newly created feature branch, merge the reviewed changes into that deployed branch before expecting auto deploy. A Render service and its existing branch/settings have not been modified by these instructions.
+The question-generation MCP setup remains in `MCP_QUESTIONS.md`. Generated questions are reviewed and exported into static game files; the game never contacts AI during play.
 
 ## Validation
 
-Worker checks:
-
 ```sh
-cd Space-Invaders/serverless
-npm ci
-npm test
-npm run check
+npm ci --prefix mcp
+npm test --prefix mcp
+node --test tests/worker.test.mjs
 ```
 
-Browser checks need Playwright on a development computer (not the Pi): install it into a temporary test environment, with Chromium installed. Serve GAME on `localhost:8000`, make `playwright` resolvable to Node, then run `node tests/browser.cjs` from the repository root. `CHROMIUM_PATH` overrides `/usr/bin/chromium`; `IOT_GAME_URL` overrides the local test URL. The checks exercise keyboard control, real laser collisions, life-loss penalties and pressure increases, immediate correct-answer bonuses, multi-laser volleys, paused questions, Kanban capacity, offline queue persistence after reload, all ten wave reviews and victory. Wave completion is forced during the campaign-flow test so it verifies transitions without an automated shooter bot. Manual playtesting on the physical Pi/Joy-Con is still needed. No live GitHub score commits or production Worker deployment are performed by the automated tests.
-
-## Criteria mapping
-
-| Criterion | Mission | Playable decisions |
-|---|---:|---|
-| Authentication | 1 | Device identity, failed logins, broker identity, independent revocation |
-| Authorisation | 2 | Device roles, operator removal, temporary privileges, trusted enforcement |
-| TLS encryption | 3 | Verified MQTT TLS, hostname mismatch, protocol versions, clock errors |
-| Access Control Lists | 4 | Narrow publish rules, default deny, subscription limits, negative tests |
-| Strong credentials | 5 | Unique random secrets, leaked-secret rotation, storage, decommissioning |
-| Certificate management | 6 | Renewal, stolen-key replacement, trust anchors, expiry monitoring |
-| Network segmentation | 7 | IoT VLANs, controlled routing, management isolation, boundary tests |
-| Firewall configuration | 8 | Required egress, management gateway, rule testing, expiring exceptions |
-| Secure topic design | 9 | Per-device/tenant namespaces, command separation, freshness, no secrets in topics |
-| Input validation | 10 | Schema/type/range/size checks, no shell evaluation, strict fields, validation boundaries |
+With Playwright available and the game served locally, run `node tests/browser.cjs`. `IOT_GAME_URL` changes the test URL and `CHROMIUM_PATH` changes the Chromium executable. Browser tests cover login, original shooting, bullet-only life loss, hit-only questions, numeric answers, wave progression, victory and restart. Physical Pi/controller and production deployments still need verification.
 ````
 
 ## LICENSE
@@ -251,7 +171,7 @@ SOFTWARE.
 ````markdown
 # Question-generation MCP server
 
-The new server is `mcp/server.mjs`; the requested client JSON template is `mcp.json`. It uses the official Model Context Protocol SDK over local standard input/output. It reads and writes this repository's question files on your development computer. It does not run inside the game, open a network port, need a GitHub token, or change the JoyToKey controls. The game still runs offline on the Pi with its 60 original upgrade questions and any approved exports.
+The new server is `mcp/server.mjs`; the requested client JSON template is `mcp.json`. It uses the official Model Context Protocol SDK over local standard input/output. It reads and writes this repository's question files on your development computer. It does not run inside the game, open a network port or need a GitHub token. The game still runs offline on the Pi with its 60 original upgrade questions and any approved exports.
 
 ## Install and connect
 
@@ -303,7 +223,7 @@ The workflow is:
 1. `list_security_criteria` identifies the exact criterion ID and current question count.
 2. `generate_questions`, or `get_generation_brief` followed by `save_question_draft`, creates a draft in `.question-drafts/`.
 3. Inspect the draft with `get_question_draft`; review technical accuracy, answer ambiguity, reading level and wording. Automated validation checks structure, not factual truth.
-4. After review, call `publish_question_draft` with its ID, `reviewed: true` and a review note. It appends questions to the matching mission and rebuilds the static question script.
+4. After review, call `publish_question_draft` with its ID, `reviewed: true` and a review note. It appends questions to the matching security-question category and rebuilds the static question script.
 5. Review and commit the two exported game files; merge the changes into the branch Render deploys. The Pi uses those static files after its local copy is updated. Neither platform needs to contact MCP during gameplay.
 
 The prompt `write-iot-questions` and resource `iot-questions://workflow` expose the same workflow to compatible clients. Tools are discoverable through the standard MCP handshake.
@@ -312,7 +232,7 @@ The prompt `write-iot-questions` and resource `iot-questions://workflow` expose 
 
 | Tool | Purpose |
 |---|---|
-| `list_security_criteria` | List all ten missions and their question counts |
+| `list_security_criteria` | List all ten security categories and their question counts |
 | `get_generation_brief` | Provide model instructions, format and existing prompts |
 | `generate_questions` | Generate through client sampling, validate and save a draft, or return fallback instructions |
 | `validate_questions` | Check structure, lengths, answer uniqueness and duplicate prompts |
@@ -353,7 +273,7 @@ The original files remain `Scripts/missions.js` and `Scripts/question-bank.js`. 
 - `SpaceInvaders-master/SpaceInvaders-master/data/generated-questions.json`: tracked source of truth, including criterion, review note and timestamp.
 - `SpaceInvaders-master/SpaceInvaders-master/Scripts/generated-questions.js`: tracked static export loaded after the base bank.
 
-There is a 250-question limit for generated additions across the game, independent of the original 60. Mission counts update automatically. Question difficulty labels guide writing; gameplay difficulty follows the separate pressure mechanic in GAME_UPGRADE.md.
+There is a 250-question limit for generated additions across the game, independent of the original 60. The original three shooter waves share this question pool. Questions appear only after an enemy bullet removes a life. Map the four JoyToKey buttons to 1, 2, 3 and 4. Question difficulty labels guide writing; gameplay difficulty follows the pressure mechanic in GAME_UPGRADE.md.
 
 Unpublished drafts and generated client configuration stay out of Git. The server never commits, pushes, merges or deploys changes. Publication is idempotent: retrying the same draft repairs an interrupted export without duplicating its questions. Whole files are replaced atomically; a short filesystem lock prevents competing server processes from overwriting each other's changes. After a crash, stop all question-server processes before removing an abandoned empty `.question-drafts/.write-lock` directory. Normal operations remove it automatically. Symlink and path traversal access is rejected; repository JavaScript is parsed as JSON data rather than executed by the server.
 
@@ -369,447 +289,138 @@ The integration tests start the actual server as a child process and use the off
 A Render Static Site cannot host this stdio MCP process. Use the development-computer workflow above to produce static questions for Render. A remote HTTP MCP deployment would be a separate server with authentication and hosting, and is not required for this game workflow.
 ````
 
-## SpaceInvaders-master/SpaceInvaders-master/Scripts/campaign.js
+## SpaceInvaders-master/SpaceInvaders-master/Scripts/arcade-leaderboard.js
 
 ```javascript
-/* New scenes wrap the original shooter. GamePiece/Character/Player/Enemy remain in script.js. */
-window.IOT_CAMPAIGN = (() => {
-  const C = { phase: 'title', tab: 0, selected: 0, completed: 0, reviews: [], m: null };
-  const tabs = ['Brief', 'Kanban', 'Risks', 'Security'];
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  const shuffle = items => {
-    const result = [...items];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
+/* Optional score saving from the original end screen. Never interrupts shooting. */
+window.ARCADE_BOARD = (() => {
+  let state='',name='',letter=0,saving=false,error='';
+  const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  function handleKey(event){
+    if(!state){
+      if(gameStart&&(gameOver||gameWon)&&!DEATH_QUIZ.active&&['Digit3','Numpad3'].includes(event.code)&&!event.repeat){event.preventDefault();state='name';name='';letter=0;error='';return true;}
+      return false;
     }
-    return result;
-  };
-  function say(title, message, next) {
-    C.phase = 'feedback'; C.message = { title, message, next };
+    event.preventDefault();if(event.repeat||saving)return true;
+    const code=event.code;
+    if(state==='name'){
+      if(['ArrowUp','ArrowRight'].includes(code))letter=(letter+1)%alphabet.length;
+      else if(['ArrowDown','ArrowLeft'].includes(code))letter=(letter+alphabet.length-1)%alphabet.length;
+      else if(['Digit1','Numpad1'].includes(code)&&name.length<8)name+=alphabet[letter];
+      else if(['Digit2','Numpad2'].includes(code))name=name.slice(0,-1);
+      else if(['Digit4','Numpad4','Enter'].includes(code)){
+        if(name.length<3){error='Add at least 3 characters.';return true;}
+        saving=true;IOT_LEADERBOARD.save(name,score,levelsCleared).then(()=>state='top').catch(e=>error='NOT SAVED: '+e.message).finally(()=>saving=false);
+      }else if(['Digit3','Numpad3','Escape'].includes(code))state='';
+    }else if(['Digit4','Numpad4','Escape','Enter'].includes(code))state='';
+    else if(['Digit2','Numpad2'].includes(code))void IOT_LEADERBOARD.flush();
+    return true;
   }
-  function startMission() {
-    C.tab = 0; C.selected = 0; C.phase = 'plan';
-    const source = IOT_MISSIONS[level - 1];
-    C.m = {
-      source, budget: level <= 3 ? 1400 : 1200, spent: 0, hours: 0, teamLimit: 18, deadline: 12 + level % 3,
-      battleFrames: 0, safe: 0, answerBonus: 0, pressure: 0, answered: new Map(), required: 3, event: null,
-      questions: shuffle(source.decisions).map(q => ({ ...q, options: shuffle(q.options) })),
-      tasks: [
-        { name: 'Design device policy', cost: 180, hours: 2, state: 0 },
-        { name: 'Implement controls', cost: 280, hours: 3, state: 0 },
-        { name: 'Test allowed and denied paths', cost: 220, hours: 3, state: 0 }
-      ],
-      risks: [
-        { name: source.risk, likelihood: 4, impact: 5, initial: 20, choice: null, cost: 180 },
-        { name: 'Delivery delay leaves a rushed deployment.', likelihood: 3, impact: 4, initial: 12, choice: null, cost: 120 }
-      ]
-    };
-  }
-  function start() {
-    gameOver = false; gameWon = false; gameStart = true;
-    gamePaused = false; gamePausedDelay = 0; nextLevelDelay = 0; moveDownNextTick = false;
-    init(); C.completed = 0; C.reviews = []; startMission();
-  }
-  function affordable(cost, hours) {
-    return C.m.spent + cost <= C.m.budget && C.m.hours + hours <= C.m.teamLimit;
-  }
-  function spend(cost, hours) { C.m.spent += cost; C.m.hours += hours; }
-  function remainingRisk() {
-    return Math.max(0, C.m.risks.reduce((sum, r) => sum + r.likelihood * r.impact, 0) + (C.m.answered.size - C.m.safe) * 3 - C.m.safe * 2);
-  }
-  function question(returnTo = 'battle') {
-    const index = C.m.questions.findIndex((_, i) => !C.m.answered.has(i));
-    C.questionIndex = index < 0 ? Math.floor(Math.random() * C.m.questions.length) : index;
-    C.returnTo = returnTo; C.phase = 'question'; C.selected = 0;
-  }
-  function answer(index) {
-    const m = C.m, q = m.questions[C.questionIndex], option = q.options[index];
-    if (!option) return;
-    const fresh = !m.answered.has(C.questionIndex);
-    let award = 0;
-    if (fresh) {
-      m.answered.set(C.questionIndex, option[1]);
-      if (option[1]) {
-        m.safe++;
-        m.pressure = Math.max(-3, m.pressure - 1);
-        if (m.safe <= 6) { award = 100; score += award; m.answerBonus += award; }
-      } else m.pressure = Math.min(4, m.pressure + 1);
-      applyCombatSettings();
+  function draw(){
+    if(!state)return false;
+    drawBackground();context.fillStyle='white';context.font='23px monospace';
+    context.fillText(state==='name'?'SAVE YOUR SCORE':'TOP 10',40,60);
+    context.font='20px monospace';
+    if(state==='name'){
+      ['Score: '+score,'Name: '+name+'_','Selected character: '+alphabet[letter],'Stick: character | 1: add | 2: erase','4: submit | 3: back',error].forEach((line,i)=>context.fillText(line,40,135+i*55));
+    }else{
+      const board=IOT_LEADERBOARD.snapshot();
+      board.top.forEach((row,i)=>context.fillText((i+1)+'. '+row.name+'  '+row.score,40,105+i*32));
+      context.font='15px monospace';context.fillText(board.status,30,480);context.fillText('Pending: '+board.pending+' | 2: retry | 4: back',30,520);
     }
-    const next = () => {
-      if (C.returnTo === 'review') {
-        if (m.answered.size < m.required) question('review'); else finishReview(false);
-      } else if (C.returnTo === 'final') {
-        if (m.answered.size < m.required) question('final'); else finishReview(true);
-      } else if (C.returnTo === 'battle') resumeBattle();
-      else C.phase = 'plan';
-    };
-    const effect = fresh
-      ? (option[1] ? '+'+award+' points. Pressure falls; volley: '+player.volleySize+' laser(s). First six correct answers per mission earn points.' : 'Risky decision recorded: threat pressure increases.')
-      : 'Practice answer: the original result stays recorded.';
-    const correct = q.options.find(o => o[1]);
-    const explanation = option[1] ? option[2] : option[2] + '\n\nBetter choice: ' + correct[0] + '. ' + correct[2];
-    say(option[1] ? 'Correct decision' : 'Risky decision', explanation + '\n\n' + effect, next);
+    return true;
   }
-  function changeTask() {
-    const task = C.m.tasks[C.selected];
-    if (task.state === 2) {
-      say('Task complete', 'Completed tasks provide evidence that the control was delivered and tested.', () => C.phase = 'plan');
-    } else if (task.state === 0) {
-      if (C.m.tasks.some(t => t.state === 1)) {
-        say('Team busy', 'The team has a work-in-progress limit of one. Finish or return the current task before starting another.', () => C.phase = 'plan');
-      } else {
-        task.state = 1;
-        say('Task started', 'Limiting work in progress helps the team finish useful work before starting more tasks.', () => C.phase = 'plan');
-      }
-    } else if (affordable(task.cost, task.hours)) {
-      spend(task.cost, task.hours); task.state = 2;
-      say('Task delivered', 'This work uses finite team time and money. Leaving capacity for testing and incidents reduces delivery risk.', () => C.phase = 'plan');
-    } else {
-      say('Capacity limit', 'This task exceeds the remaining budget or team hours. Return it with B or launch with the delivery risk recorded.', () => C.phase = 'plan');
-    }
-  }
-  function risk(mitigate) {
-    const r = C.m.risks[C.selected];
-    if (r.choice === 'mitigate') {
-      say('Mitigation in place', 'Mitigation has already consumed resources and reduced this risk; it cannot be refunded.', () => C.phase = 'plan');
-      return;
-    }
-    if (mitigate && !affordable(r.cost, 2)) {
-      say('Mitigation unavailable', 'There is not enough budget or team time. You can explicitly accept the remaining risk with B.', () => C.phase = 'plan');
-      return;
-    }
-    r.choice = mitigate ? 'mitigate' : 'accept';
-    if (mitigate) { spend(r.cost, 2); r.likelihood = 1; }
-    say(mitigate ? 'Risk mitigated' : 'Risk accepted', mitigate
-      ? 'Spending effort on a control lowers likelihood. Impact remains the same if the incident still happens.'
-      : 'Acceptance saves resources but keeps the likelihood x impact exposure. Accepted risk remains visible in the review.', () => C.phase = 'plan');
-  }
-  function launch() {
-    if (C.m.risks.some(r => !r.choice)) {
-      say('Risk decision needed', 'Choose mitigate or accept for both risks before deployment. Explicit ownership prevents risks being silently ignored.', () => { C.phase = 'plan'; C.tab = 2; C.selected = 0; });
-      return;
-    }
-    if (!C.m.event) {
-      C.m.event = shuffle(['scope', 'cut', 'incident', 'stable'])[0];
-      C.phase = 'event'; return;
-    }
-    resumeBattle();
-  }
-  function eventAction(index) {
-    const m = C.m;
-    if (m.event === 'scope') {
-      if (index === 0) {
-        if (!affordable(160, 2)) {
-          say('Scope does not fit', 'The added work exceeds capacity. Defer it with B and preserve the agreed scope.', () => C.phase = 'event'); return;
-        }
-        spend(160, 2);
-        m.risks[1].likelihood = Math.max(1, m.risks[1].likelihood - 1);
-      }
-      say('Scope change', index === 0
-        ? 'The added monitoring work consumes money and team time, but lowers delivery uncertainty.'
-        : 'Deferring extra scope protects the agreed budget and deadline. The original objectives still apply.', resumeBattle);
-    } else if (m.event === 'cut') {
-      m.budget = Math.max(m.spent, m.budget - 240);
-      if (index === 0) m.deadline += 2;
-      else m.risks[1].likelihood = Math.min(5, m.risks[1].likelihood + 1);
-      say('Budget cut', index === 0
-        ? 'The budget fell. Agreeing a later deadline makes the cost/schedule tradeoff explicit.'
-        : 'Keeping the original deadline after a cut increases delivery risk.', resumeBattle);
-    } else if (m.event === 'incident') {
-      if (index === 0 && !affordable(160, 2)) {
-        say('Response does not fit', 'There is insufficient response capacity. B records acceptance of the increased incident risk.', () => C.phase = 'event'); return;
-      }
-      if (index === 0) { spend(160, 2); m.risks[0].likelihood = 1; }
-      else m.risks[0].likelihood = Math.min(5, m.risks[0].likelihood + 1);
-      say('Incident response', index === 0
-        ? 'Investigating and containing the alert costs resources, but reduces the chance of a wider incident.'
-        : 'Proceeding without investigation keeps resources available but increases security exposure.', resumeBattle);
-    } else {
-      say('No disruption', 'A quiet delivery window leaves contingency available. Keeping a reserve helps when later levels encounter incidents.', resumeBattle);
-    }
-  }
-  function applyCombatSettings() {
-    const done = C.m.tasks.filter(t => t.state === 2).length;
-    player.volleySize = 1 + Math.min(2, C.m.safe);
-    player.laserTotal = player.volleySize * 2 + (done >= 2 ? 1 : 0);
-    const exposure = remainingRisk();
-    const pressure = C.m.pressure;
-    enemies.forEach(e => {
-      if (e.baseSpeed === undefined) e.baseSpeed = Math.abs(e.getDx());
-      if (e.baseShotFreq === undefined) e.baseShotFreq = e.shotFreq;
-      e.setDx((e.getDx() < 0 ? -1 : 1) * e.baseSpeed * (1 + pressure * 0.06));
-      e.bulletSpeed = Math.max(3, Math.min(8.2, (exposure <= 12 ? 4 : exposure > 30 ? 7 : 6) + pressure * 0.3));
-      e.shotFreq = Math.max(100, Math.round(e.baseShotFreq / (1 + pressure * 0.05)));
-      e.shotFrame = 0;
-    });
-  }
-  function resumeBattle() {
-    gamePaused = false; gamePausedDelay = 0; activeKey = -1;
-    player.clearLasers(); enemies.forEach(e => e.clearLasers());
-    applyCombatSettings();
-    C.phase = 'battle';
-  }
-  function loss() {
-    if (C.phase !== 'battle') return;
-    C.m.pressure = Math.min(4, C.m.pressure + 1);
-    applyCombatSettings();
-    player.clearLasers(); enemies.forEach(e => e.clearLasers());
-    if (gameOver) question('final'); else question('battle');
-  }
-  function cleared() {
-    if (C.phase !== 'battle') return;
-    if (C.m.answered.size < C.m.required) question('review'); else finishReview(false);
-  }
-  function finishReview(failed) {
-    const m = C.m;
-    if (m.reviewed) return;
-    m.reviewed = true;
-    const done = m.tasks.filter(t => t.state === 2).length;
-    const duration = m.hours + Math.ceil(m.battleFrames / 900);
-    const onTime = duration <= m.deadline;
-    const reduced = 32 - remainingRisk();
-    const bonus = failed ? 0 : 100 * Math.min(3, m.safe) + done * 100 + (reduced > 0 && onTime ? 100 : 0);
-    score += bonus;
-    if (!failed) {
-      C.completed++;
-      if (m.safe >= 3) player.setLives(Math.min(5, player.getLives() + 1));
-    }
-    C.review = { failed, done, duration, onTime, reduced, bonus, level, spent: m.spent, budget: m.budget };
-    C.reviews.push(C.review); C.phase = 'review';
-  }
-  function nameEntry() {
-    C.phase = 'name'; C.name = ''; C.letter = 0; C.saving = false; C.error = '';
-  }
-  async function submit() {
-    if (C.saving) return;
-    if (C.name.length < 3) { C.error = 'Confirm at least 3 characters with A.'; return; }
-    C.saving = true;
-    try {
-      await IOT_LEADERBOARD.save(C.name, score, C.completed);
-      C.phase = 'leaderboard';
-    } catch (error) { C.error = 'NOT SAVED: ' + error.message; }
-    finally { C.saving = false; }
-  }
-  function input(key) {
-    if (C.phase === 'title') {
-      if (key === 'a' || key === 'y') start();
-      else if (key === 'x') { C.phase = 'leaderboard'; void IOT_LEADERBOARD.flush(); }
-    } else if (C.phase === 'feedback') {
-      if (key === 'a' || key === 'y') C.message.next();
-    } else if (C.phase === 'question') {
-      if (key === 'up' || key === 'left') C.selected = (C.selected + 3) % 4;
-      else if (key === 'down' || key === 'right') C.selected = (C.selected + 1) % 4;
-      else if (['a','b','x','y'].includes(key)) answer(['a','b','x','y'].indexOf(key));
-    } else if (C.phase === 'event') {
-      if (key === 'a' || key === 'b') eventAction(key === 'a' ? 0 : 1);
-    } else if (C.phase === 'plan') {
-      if (key === 'left' || key === 'right' || key === 'x') {
-        C.tab = (C.tab + (key === 'left' ? 3 : 1)) % 4; C.selected = 0;
-      } else if (key === 'up' || key === 'down') {
-        const length = C.tab === 1 ? C.m.tasks.length : C.tab === 2 ? 2 : 1;
-        C.selected = (C.selected + (key === 'up' ? length - 1 : 1)) % length;
-      } else if (key === 'y') launch();
-      else if (C.tab === 1 && key === 'a') changeTask();
-      else if (C.tab === 1 && key === 'b') {
-        const t = C.m.tasks[C.selected];
-        if (t.state === 1) {
-          t.state = 0;
-          say('Task returned', 'Returning unfinished work frees the team to prioritise another task. Undelivered work still carries delivery risk.', () => C.phase = 'plan');
-        }
-      } else if (C.tab === 2 && ['a','b'].includes(key)) risk(key === 'a');
-      else if (C.tab === 3 && key === 'a') question('plan');
-    } else if (C.phase === 'battle') {
-      if (key === 'a' && !gamePaused && !gameOver) player.addLaser();
-      else if (key === 'x') { C.phase = 'pause'; activeKey = -1; }
-    } else if (C.phase === 'pause') {
-      if (key === 'a' || key === 'x') C.phase = 'battle';
-    } else if (C.phase === 'review' && (key === 'a' || key === 'y')) {
-      if (C.review.failed || level === 10) { gameWon = !C.review.failed; nameEntry(); }
-      else {
-        level++; nextLevelDelay = 0; moveDownNextTick = false; audioTick = 0;
-        levels[level - 1](); player.clearLasers(); player.setX(canvas.width / 2 - 25); startMission();
-      }
-    } else if (C.phase === 'name' && !C.saving) {
-      if (['up','right'].includes(key)) C.letter = (C.letter + 1) % alphabet.length;
-      else if (['down','left'].includes(key)) C.letter = (C.letter + alphabet.length - 1) % alphabet.length;
-      else if (key === 'a' && C.name.length < 8) { C.name += alphabet[C.letter]; C.error = ''; }
-      else if (key === 'b') C.name = C.name.slice(0,-1);
-      else if (key === 'y') void submit();
-    } else if (C.phase === 'leaderboard') {
-      if (key === 'a' || key === 'y') start();
-      else if (key === 'b') void IOT_LEADERBOARD.flush();
-    }
-  }
-  function line(text, x, y, color = 'white', size = 20) {
-    context.font = size + 'px monospace'; context.fillStyle = color; context.fillText(text, x, y);
-  }
-  function wrap(text, y, color = 'white', size = 20, width = 630, x = 34) {
-    context.font = size + 'px monospace'; context.fillStyle = color;
-    for (const paragraph of text.split('\n')) {
-      let current = '';
-      for (const word of paragraph.split(' ')) {
-        if (context.measureText(current + word).width > width && current) {
-          context.fillText(current.trim(), x, y); y += size + 7; current = '';
-        }
-        current += word + ' ';
-      }
-      context.fillText(current.trim(), x, y); y += size + 7;
-    }
-    return y;
-  }
-  function page(title, footer) {
-    drawBackground();
-    line(title, 28, 40, '#f2bb05', 26);
-    context.strokeStyle = 'white'; context.strokeRect(16, 58, 668, 480);
-    line(footer, 24, 570, '#f0f0c9', 17);
-  }
-  function draw() {
-    const m = C.m;
-    if (C.phase === 'battle') {
-      line('L' + level + ' ' + m.source.title + ' | C: pause', 20, 520, '#f2bb05', 16);
-      line('Pressure '+m.pressure+' | Volley '+player.volleySize+' | Answer bonus '+m.answerBonus, 20, 542, '#f0f0c9', 16); return;
-    }
-    if (C.phase === 'title') {
-      page('SPACE INVADERS: IoT DEFENCE', 'A / D: start     C: top 10');
-      let y = wrap('Your original ship, invaders, lasers and lives. Ten IoT security missions.', 110);
-      y = wrap('Stick: arrow keys\nA: fire / confirm\nB: back / accept risk\nC: planning tab / pause\nD: launch / submit', y + 20);
-      wrap('Questions after a lost life: A / B / C / D select answers 1 / 2 / 3 / 4.', y + 20, '#f2bb05');
-    } else if (C.phase === 'plan') {
-      page('L' + level + ': ' + m.source.title, 'Stick: move/tab  A/B: act  C: tab  D: launch');
-      line(tabs.map((t,i) => i === C.tab ? '['+t+']' : t).join('  '), 30, 91, '#f2bb05', 18);
-      line('Budget $' + (m.budget-m.spent) + '  Team ' + (m.teamLimit-m.hours) + 'h  Due ' + m.deadline + 'h', 30, 125, 'white', 18);
-      if (C.tab === 0) {
-        let y = wrap('Objective: ' + m.source.objective, 175);
-        y = wrap('Deliver policy, implementation and tests. Plan team time and record both risks before launch.', y + 15);
-        y = wrap('Deadline includes team work plus one simulated hour per 15 seconds of combat. Menus pause the clock.', y + 15);
-        wrap('Secure answers and mitigations slow enemy shots. Completed tasks can add a third laser.', y + 15, '#f0f0c9');
-      } else if (C.tab === 1) {
-        line('To Do  >  Doing  >  Done    (Doing limit: 1)', 30, 175, '#f0f0c9', 18);
-        m.tasks.forEach((t,i) => {
-          const y = 225 + i * 85;
-          line((C.selected===i?'> ':'  ') + t.name, 28, y, C.selected===i?'#f2bb05':'white', 18);
-          line('  ' + ['To Do','Doing','Done'][t.state] + ' | $' + t.cost + ' | ' + t.hours + ' team hours', 28, y+28, 'white', 18);
-        });
-        wrap('A: start/complete   B: return Doing task\nCosts are charged on completion. Unfinished tasks earn no delivery bonus.', 465, '#f0f0c9', 17);
-      } else if (C.tab === 2) {
-        const r = m.risks[C.selected];
-        let y = wrap('Risk '+(C.selected+1)+'/2: ' + r.name, 180);
-        y = wrap('Likelihood '+r.likelihood+' x Impact '+r.impact+' = '+(r.likelihood*r.impact)+' (was '+r.initial+')', y+15, '#f2bb05');
-        y = wrap('Decision: '+(r.choice||'UNDECIDED'), y+15);
-        wrap('A: mitigate for $'+r.cost+' and 2h\nB: accept for $0 and 0h\nStick up/down: choose risk', y+25);
-      } else {
-        let y = wrap('Question bank: '+m.questions.length+' for this criterion. At least 3 decisions per mission.', 180);
-        y = wrap('Answered: '+m.answered.size+' / '+m.questions.length+'\nSecure answers: '+m.safe, y+20, '#f2bb05');
-        wrap('A: practise a configuration decision now. You will also answer after losing a life and before the wave review.', y+25);
-      }
-    } else if (C.phase === 'question') {
-      page('L'+level+': '+m.source.title, 'A = 1     B = 2     C = 3     D = 4');
-      const q = m.questions[C.questionIndex];
-      let y = wrap(q.prompt, 102, '#f2bb05', 21);
-      q.options.forEach((option,i) => {
-        y = wrap((C.selected === i ? '> ' : '  ') + (i+1)+'. '+option[0], y+16, 'white', 19);
-      });
-    } else if (C.phase === 'feedback') {
-      page(C.message.title, 'A / D: continue');
-      line('WHY THIS MATTERS', 34, 112, '#f2bb05', 21);
-      wrap(C.message.message, 158);
-    } else if (C.phase === 'event') {
-      page('Project event', 'A: first option     B: second option');
-      const events = {
-        scope: 'Scope change: supplier requests more monitoring.\n\nA: deliver extra work ($160 / 2h)\nB: defer to a future release',
-        cut: 'Budget cut: available funding falls by $240, down to the amount already spent.\n\nA: renegotiate deadline (+2h)\nB: keep deadline (+delivery risk)',
-        incident: 'Incident: suspicious device activity reported.\n\nA: investigate and contain ($160 / 2h)\nB: accept increased incident risk',
-        stable: 'No disruption this time.\n\nA / B: preserve contingency and launch'
-      };
-      wrap(events[m.event], 115);
-    } else if (C.phase === 'pause') {
-      page('Mission paused', 'A / C: resume');
-      wrap('Score '+score+'  Lives '+player.getLives()+'\nPressure: '+m.pressure+'  Laser volley: '+player.volleySize+'\nTeam hours: '+m.hours+' / '+m.teamLimit+'\nBudget spent: $'+m.spent+' / $'+m.budget+'\nCurrent risk exposure: '+remainingRisk(), 120);
-    } else if (C.phase === 'review') {
-      const r = C.review;
-      page(r.failed ? 'Mission ended: review' : 'Mission complete: review', 'A / D: continue');
-      wrap('Budget spent: $'+r.spent+' / $'+r.budget+'\nTasks Done: '+r.done+' / 3\nDelivery time: '+r.duration+'h / '+m.deadline+'h\nDeadline: '+(r.onTime?'MET':'MISSED')+'\nRisk reduced: '+r.reduced+' points\nSecurity answers: '+m.safe+' / '+m.answered.size+'\nAnswer bonuses already paid: '+m.answerBonus+'\nReview bonus: '+r.bonus+'\nTotal score: '+score, 110);
-      wrap('Secure answers reduce exposure by 2; unsafe ones add 3. A negative reduction means exposure rose.', 450, '#f0f0c9', 18);
-    } else if (C.phase === 'name') {
-      page(gameWon ? 'YOU WIN! Enter arcade name' : 'GAME OVER: enter arcade name', 'Stick: letter  A: add  B: erase  D: submit');
-      wrap('Score: '+score+'\nMissions cleared: '+C.completed+' / 10\n\nName: '+C.name+'_'+ '\nNext character: [ '+alphabet[C.letter]+' ]\n\nUse 3-8 letters/numbers.', 112);
-      if (C.error) wrap(C.error, 420, '#f2bb05');
-      if (C.saving) line('Saving locally...', 34, 490, '#f2bb05');
-    } else if (C.phase === 'leaderboard') {
-      const board = IOT_LEADERBOARD.snapshot();
-      page('IoT ARCADE: TOP 10', 'A / D: new game     B: retry upload');
-      if (!board.top.length) wrap('No cached leaderboard yet. Your queued scores stay on this Pi.', 105);
-      board.top.forEach((row,i) => line(String(i+1).padStart(2)+'  '+row.name.padEnd(8)+'  '+row.score, 55, 100+i*32, 'white', 21));
-      wrap(board.status+'\nLocal pending: '+board.pending, 455, '#f2bb05', 17);
-    }
-  }
-  return { state: C, start, input, draw, loss, cleared, startMission, question,
-    tick() { if (C.phase === 'battle') C.m.battleFrames++; } };
+  return {handleKey,draw};
 })();
 ```
 
 ## SpaceInvaders-master/SpaceInvaders-master/Scripts/config.js
 
 ```javascript
-/* Public settings only. NEVER put a GitHub token here or anywhere on the Pi. */
+/* Public endpoint only. Keep the GitHub token in the leaderboard Worker. */
 window.IOT_CONFIG = Object.freeze({
-  leaderboardUrl: "", // e.g. https://iot-leaderboard.YOUR-SUBDOMAIN.workers.dev
-  // JoyToKey / keyboard emulator: change these to the keys your buttons send.
-  // Space and Enter retain their original functions. No keyboard is needed to play.
-  keys: { a: ["KeyA", "Space"], b: ["KeyB", "Escape"], x: ["KeyC"], y: ["KeyD", "Enter"] },
-  // Enable only when using Gamepad input instead of JoyToKey, to avoid duplicate actions.
-  gamepad: { enabled: false, axisX: 0, axisY: 1, a: 0, b: 1, x: 2, y: 3, deadzone: 0.45 },
-  build: "iot-v2"
+  leaderboardUrl: "",
+  build: "iot-shooter-v1"
 });
 ```
 
-## SpaceInvaders-master/SpaceInvaders-master/Scripts/controls.js
+## SpaceInvaders-master/SpaceInvaders-master/Scripts/death-quiz.js
 
 ```javascript
-/* One input router for JoyToKey keyboard events and optional Gamepad input. */
-window.IOT_INPUT = (() => {
-  const held = new Set();
-  let handler = () => {}, padPrevious = {}, repeatAt = 0;
-  const directions = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
-  const action = code => directions[code] || Object.keys(IOT_CONFIG.keys).find(k => IOT_CONFIG.keys[k].includes(code));
-  document.addEventListener("keydown", event => {
-    const key = action(event.code);
-    if (!key) return;
-    event.preventDefault();
-    const first = !held.has(key);
-    held.add(key);
-    if (first || (event.repeat && directions[event.code])) handler(key);
-  });
-  document.addEventListener("keyup", event => {
-    const key = action(event.code);
-    if (key) { event.preventDefault(); held.delete(key); }
-  });
-  window.addEventListener("blur", () => held.clear());
-  let padHeld = {};
-  function poll(now) {
-    const g = IOT_CONFIG.gamepad;
-    const pad = g.enabled && navigator.getGamepads && Array.from(navigator.getGamepads()).find(Boolean);
-    const current = {};
-    if (pad) {
-      const ax = pad.axes[g.axisX] || 0, ay = pad.axes[g.axisY] || 0;
-      current.left = ax < -g.deadzone || !!pad.buttons[14]?.pressed;
-      current.right = ax > g.deadzone || !!pad.buttons[15]?.pressed;
-      current.up = ay < -g.deadzone || !!pad.buttons[12]?.pressed;
-      current.down = ay > g.deadzone || !!pad.buttons[13]?.pressed;
-      for (const key of ["a", "b", "x", "y"]) current[key] = !!pad.buttons[g[key]]?.pressed;
+/* A small overlay around the original shooter. begin() is called only by an enemy-bullet hit. */
+window.DEATH_QUIZ = (() => {
+  let state = '', current = null, chosen = -1, remaining = [], pressure = 0, correct = 0;
+  const shuffle = source => {
+    const items = [...source];
+    for (let i=items.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]]; }
+    return items;
+  };
+  function applyDifficulty() {
+    if (player) { player.volleySize = 1+Math.min(2,correct); player.laserTotal = player.volleySize*2; }
+    for (const enemy of enemies) {
+      enemy.setDx((enemy.getDx()<0?-1:1)*enemy.baseSpeed*(1+pressure*0.06));
+      enemy.bulletSpeed = 6+pressure*0.3;
+      enemy.shotFreq = Math.max(100,Math.round(enemy.baseShotFreq/(1+pressure*0.05)));
+      enemy.shotFrame = 0;
     }
-    for (const [key, pressed] of Object.entries(current)) {
-      if (pressed && !padPrevious[key]) { handler(key); repeatAt = now + 350; }
-      else if (pressed && ["left", "right", "up", "down"].includes(key) && now >= repeatAt) {
-        handler(key); repeatAt = now + 140;
-      }
-    }
-    padPrevious = current;
-    padHeld = current;
   }
-  return { bind(fn) { handler = fn; }, down(key) { return held.has(key) || !!padHeld[key]; }, poll };
+  function reset() { state='';current=null;chosen=-1;remaining=[];pressure=0;correct=0;applyDifficulty(); }
+  function begin() {
+    if (state) return;
+    pressure=Math.min(4,pressure+1);applyDifficulty();
+    if (!remaining.length) remaining=shuffle(IOT_MISSIONS.flatMap(category=>category.decisions.map(question=>({...question,category:category.title}))));
+    current={...remaining.pop()};current.options=shuffle(current.options);chosen=-1;
+    player.clearLasers();enemies.forEach(enemy=>enemy.clearLasers());activeKey=-1;gamePaused=true;state='question';
+  }
+  function answer(index) {
+    if (state!=='question') return;
+    chosen=index;
+    if (current.options[index][1]) { score+=100;correct++;pressure=Math.max(-2,pressure-1); }
+    else pressure=Math.min(4,pressure+1);
+    applyDifficulty();state='explanation';
+  }
+  function resume() {
+    state='';gamePaused=false;gamePausedDelay=0;activeKey=-1;
+    player.clearLasers();enemies.forEach(enemy=>enemy.clearLasers());
+    player.setX(canvas.width/2-25);player.explodingTick=0;
+    player.srcX=player.ogSrcX;player.srcY=player.ogSrcY;player.srcWidth=player.ogSrcWidth;player.srcHeight=player.ogSrcHeight;
+  }
+  function handleKey(event) {
+    if (!state) return false;
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','Enter','Digit1','Digit2','Digit3','Digit4','Numpad1','Numpad2','Numpad3','Numpad4'].includes(event.code)) event.preventDefault();
+    if (event.repeat) return true;
+    const match=/^(?:Digit|Numpad)([1-4])$/.exec(event.code);
+    if (state==='question' && match) answer(Number(match[1])-1);
+    else if (state==='explanation' && (match||['Space','Enter'].includes(event.code))) resume();
+    return true;
+  }
+  function wrap(text,y,size=19,color='white') {
+    context.font=size+'px monospace';context.fillStyle=color;
+    let line='';
+    for(const word of text.split(' ')) {
+      if(context.measureText(line+word).width>590 && line){context.fillText(line.trim(),48,y);y+=size+7;line='';}
+      line+=word+' ';
+    }
+    context.fillText(line.trim(),48,y);return y+size+7;
+  }
+  function draw() {
+    context.fillStyle='black';context.fillRect(24,85,652,450);context.strokeStyle='white';context.strokeRect(24,85,652,450);
+    let y=wrap(current.category,118,21,'#f2bb05');
+    if(state==='question') {
+      y=wrap('You were shot. Lives remaining: '+player.getLives(),y+8,18);
+      y=wrap(current.prompt,y+18,20);
+      current.options.forEach((option,i)=>y=wrap((i+1)+'. '+option[0],y+12,18));
+      context.font='18px monospace';context.fillStyle='#f2bb05';context.fillText('Choose an answer: 1 / 2 / 3 / 4',48,515);
+    } else {
+      const option=current.options[chosen],best=current.options.find(o=>o[1]);
+      y=wrap(option[1]?'Correct! +100 points':'Incorrect answer',y+12,22,option[1]?'#f2bb05':'white');
+      y=wrap('Why this matters: '+option[2],y+16,18);
+      if(!option[1]) y=wrap('Correct choice: '+best[0]+'. '+best[2],y+12,18);
+      wrap('Laser volley: '+player.volleySize+' | Pressure: '+pressure,y+16,18,'#f2bb05');
+      context.font='17px monospace';context.fillStyle='white';context.fillText(gameOver?'Press 1-4 to continue to Game Over':'Press 1-4 to return to shooting',48,515);
+    }
+  }
+  return {reset,begin,applyDifficulty,handleKey,draw,get active(){return !!state;},get phase(){return state;},get question(){return current;},get pressure(){return pressure;}};
 })();
 ```
 
@@ -925,6 +536,44 @@ window.IOT_LEADERBOARD = (() => {
   window.addEventListener('online', () => void flush());
   setInterval(() => void flush(), 60000);
   return { start, save, flush, snapshot: () => ({ status, top, pending }) };
+})();
+```
+
+## SpaceInvaders-master/SpaceInvaders-master/Scripts/login.js
+
+```javascript
+/* Requested training login only. This browser-side check is not production authentication. */
+window.GAME_LOGIN = (() => {
+  let unlocked = false, field = 0;
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-_';
+  let letter = alphabet.indexOf('u');
+  const fields = [document.querySelector('#login-username'), document.querySelector('#login-password')];
+  const form = document.querySelector('#login-form');
+  function submit(event) {
+    if (event) event.preventDefault();
+    if (fields[0].value === 'user' && fields[1].value === 'user') {
+      unlocked = true;
+      document.querySelector('#login-panel').hidden = true;
+      document.querySelector('#game-canvas').hidden = false;
+      fields[1].value = ''; fields.forEach(f => f.blur());
+    } else document.querySelector('#login-error').textContent = 'Incorrect username or password.';
+  }
+  fields.forEach((input,i) => input.addEventListener('focus',()=>field=i));
+  form.addEventListener('submit',submit);
+  document.addEventListener('keydown', event => {
+    if (unlocked) return;
+    const code = event.code;
+    if (!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Digit1','Digit2','Digit3','Digit4','Numpad1','Numpad2','Numpad3','Numpad4','Enter'].includes(code)) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    if (code === 'ArrowUp' || code === 'ArrowDown') {
+      letter = (letter + (code === 'ArrowUp' ? 1 : alphabet.length - 1)) % alphabet.length;
+      document.querySelector('#login-character').textContent = 'Selected character: ' + alphabet[letter];
+    } else if (['ArrowLeft','ArrowRight','Digit3','Numpad3'].includes(code)) { field = 1-field; fields[field].focus(); }
+    else if (!event.repeat && ['Digit1','Numpad1'].includes(code)) fields[field].value += alphabet[letter];
+    else if (!event.repeat && ['Digit2','Numpad2'].includes(code)) fields[field].value = fields[field].value.slice(0,-1);
+    else if (!event.repeat && ['Digit4','Numpad4','Enter'].includes(code)) submit();
+  },true);
+  return {get unlocked(){return unlocked;}};
 })();
 ```
 
@@ -2624,6 +2273,9 @@ let numOfEnemies = 0;
 let level = 1;
 let nextLevelDelay = 0;
 let gamePausedDelay = 0;
+let resetFormationNextTick = false;
+let levelBonusPaid = false;
+let levelsCleared = 0;
 
 /* Base Functions (not used for game loop) */
 let playSounds = function(sound) {
@@ -2697,7 +2349,7 @@ class GamePiece {
     // be default, draw a rectangle
     context.fillStyle = this.color;
     context.beginPath();
-    context.fillRect(this.x, this.y, this.width, this.height);
+    context.fillRect(this.x, this.y, this.height, this.width);
     context.fill();
   }
 }
@@ -2841,11 +2493,9 @@ class Player extends Character {
   // add laser and player sound effect
   addLaser() {
     let laserCount = this.lasers.length;
-    // Correct security answers unlock parallel beams from one original fire press.
     const count = Math.min(this.volleySize, this.laserTotal - this.lasers.length);
     for (let beam = 0; beam < count; beam++) {
-      const spacing = 12;
-      const x = this.x + this.width / 2 - 3 + (beam - (count - 1) / 2) * spacing;
+      const x = this.x + this.width / 2 - 3 + (beam - (count - 1) / 2) * 12;
       this.lasers.push(new Laser(x, this.y, this.bulletSpeed, 6, 6, false));
     }
 
@@ -2912,6 +2562,9 @@ class Enemy extends Character {
     super(x, y, dx, dy, width, height, color, 4, true, 6, imgSrc, srcX, srcY, srcWidth, srcHeight);
 
     this.enemyType = enemyType;
+    this.spawnY = y;
+    this.baseSpeed = Math.abs(dx);
+    this.baseShotFreq = shotFreq;
     //number of frames between shots
     this.shotFrame = 0;
     this.shotFreq = shotFreq;
@@ -3009,12 +2662,9 @@ class Enemy extends Character {
       //check if any lasers need to be removed
       this.removeLasers();
 
-      //if the enemy reaches the bottom of the screen, it's an automatic game over
-      if (this.y + this.height > canvas.height - (player.getHeight())) {
-        gameOver = true;
-        player.setLives(0);
-        playSounds(explosion);
-        console.log(ded);
+      // Reaching the bottom recycles the surviving formation; only an enemy bullet can remove a life.
+      if (this.y + this.height > canvas.height - player.getHeight() - 20) {
+        resetFormationNextTick = true;
       }
 
       //draw the new image
@@ -3050,6 +2700,7 @@ let enemyHeight = canvas.height / 20;
 let createEnemies = function(speed) {
   numOfEnemies = 0;
   enemies = [];
+  levelBonusPaid = false;
   for (let i = 0; i < 5; i++) {
     for (let j = 0; j < 5; j++) {
       let enemyType = j % 3;
@@ -3061,6 +2712,7 @@ let createEnemies = function(speed) {
       numOfEnemies++;
     }
   }
+  DEATH_QUIZ.applyDifficulty();
 }
 
 // levels differ by the speed of the enemies and the number of lives of some enemies
@@ -3085,13 +2737,6 @@ let level3 = function() {
 levels.push(level1);
 levels.push(level2);
 levels.push(level3);
-// Seven additional missions reuse the original wave constructor, with bounded speed.
-for (let mission = 4; mission <= 10; mission++) {
-  levels.push(function() {
-    level = mission;
-    createEnemies(Math.min(4.6, 4 + (mission - 3) * 0.1));
-  });
-}
 
 // initialize the start of the game
 let init = function() {
@@ -3099,10 +2744,13 @@ let init = function() {
   level = 1;
   score = 0;
   audioTick = 0;
+  gamePaused = false; gamePausedDelay = 0; nextLevelDelay = 0;
+  moveDownNextTick = false; resetFormationNextTick = false; levelsCleared = 0;
 
   let playerWidth = canvas.width / 16;
   let playerHeight = canvas.height / 18;
   player = new Player((canvas.width / 2) - 25, 10, playerWidth, playerHeight, spriteSheet, 150, 637, 73, 53);
+  DEATH_QUIZ.reset();
 }
 
 // check collisions
@@ -3138,6 +2786,8 @@ let laserHitCheck = function() {
         score -= 1100;
         gamePaused = true;
         player.loseLife();
+        DEATH_QUIZ.begin();
+        return;
     }
   }
 }
@@ -3153,13 +2803,13 @@ function moveAllEnemiesDownCheck() {
   }
 }
 
-//draw the "Press Enter To Start" screen when the user navigates to the screen
+//draw the "4 / Enter To Start" screen when the user navigates to the screen
 //the text appears when "flash" is true
 var flash = false;
 let drawStart = function() {
   drawBackground();
   if (flash) {
-    let text = "Press Enter To Start";
+    let text = "4 / Enter To Start";
     let fontSize = "28px"
     // if (window.innerWidth >= 1000) {
     //   text += " To Start";
@@ -3179,7 +2829,7 @@ let drawStart = function() {
 let drawRestart = function() {
   context.font = "15px 'Press Start 2P', cursive";
   context.fillStyle = "white";
-  context.fillText("Press Enter to restart game", canvas.width / 2 - 200, canvas.height / 2 + 100);
+  context.fillText("4 / Enter to restart", canvas.width / 2 - 200, canvas.height / 2 + 100);
 }
 
 //draw the number of lives at the top of the screen along with the line separating the top portion from the game
@@ -3222,6 +2872,7 @@ let youWin = function() {
   context.fillStyle = "white";
   context.fillText("You Win!!!", canvas.width / 2 - 190, canvas.height / 2);
   drawRestart();
+  context.font="16px monospace";context.fillText("3: save score / leaderboard",150,470);
 
   gameWon = true;
 }
@@ -3255,13 +2906,15 @@ let checkGameOver = function() {
     context.fillStyle = "white";
     context.fillText("Game Over", canvas.width / 2 - 175, canvas.height / 2);
     drawRestart();
+    context.font="16px monospace";context.fillText("3: save score / leaderboard",150,470);
   }
 }
 
 //check if all enemies have been defeated. If they have, check if all levels have been beaten
 //if all levels have been beaten, display "you win" text. otherwise, display "next level" text and reset necessary variables
 let endOfLevelCheck = function() {
-  if (numOfEnemies === 0) {
+  if (numOfEnemies === 0 && !gameOver && !DEATH_QUIZ.active) {
+    if (!levelBonusPaid) { score += 500; levelsCleared++; levelBonusPaid = true; }
     if (level < levels.length) {
       //nextLevelDelay is used to keep track of the number of ticks between the end of one level and start of the next
       nextLevelDelay++;
@@ -3297,81 +2950,122 @@ let playEnemyMovementSounds = function() {
 
 //funtion that's run to play game
 //updates all of the necessary components to keep game running
-// A fixed 60 Hz simulation preserves the original frame-based speeds on any display.
-let previousFrame = 0;
-let simulationBank = 0;
-let gameLoop = function(now) {
+let gameLoop = function() {
   requestAnimationFrame(gameLoop);
-  IOT_INPUT.poll(now);
-  if (IOT_CAMPAIGN.state.phase !== "battle") {
-    previousFrame = now; simulationBank = 0;
-    IOT_CAMPAIGN.draw();
+  if (window.ARCADE_BOARD && ARCADE_BOARD.draw()) return;
+  drawBackground();
+  if (DEATH_QUIZ.active) {
+    player.draw();
+    for (const enemy of enemies) if (!enemy.getHit()) enemy.draw();
+    drawScore(); drawLives(); DEATH_QUIZ.draw();
     return;
   }
-  const elapsed = previousFrame ? Math.min(83, now - previousFrame) : 16.67;
-  previousFrame = now;
-  simulationBank += elapsed;
-  if (simulationBank < 1000 / 60) return;
-  while (simulationBank >= 1000 / 60 && IOT_CAMPAIGN.state.phase === "battle") {
-    simulationBank -= 1000 / 60;
-    drawBackground();
-    IOT_CAMPAIGN.tick();
-    activeKey = IOT_INPUT.down("right") ? 39 : IOT_INPUT.down("left") ? 37 : -1;
-    if (!gameWon && !gameOver) {
-      player.update(activeKey);
-      moveAllEnemiesDownCheck();
-      for (const enemy of enemies) enemy.update();
-      laserHitCheck();
+  if (!gameWon && !gameOver && !gamePaused) {
+    player.update(activeKey);
+    moveAllEnemiesDownCheck();
+    for (let i = 0; i < enemies.length; i++) {
+      enemies[i].update();
     }
-    if (gameOver || gamePaused) IOT_CAMPAIGN.loss();
-    else if (numOfEnemies === 0) IOT_CAMPAIGN.cleared();
-    playEnemyMovementSounds();
+    if (resetFormationNextTick) {
+      for (const enemy of enemies) if (!enemy.getHit()) enemy.setY(enemy.spawnY);
+      resetFormationNextTick = false;
+    }
+    laserHitCheck();
   }
+  if (DEATH_QUIZ.active) { drawScore(); drawLives(); DEATH_QUIZ.draw(); return; }
   drawScore();
   drawLives();
-  IOT_CAMPAIGN.draw();
-};
+  checkGamePaused();
+  endOfLevelCheck();
+  checkGameOver();
+  playEnemyMovementSounds();
+}
 
-// The single router also handles the original arrow/Space/Enter keys.
-IOT_INPUT.bind(IOT_CAMPAIGN.input);
+
+/* Runs before game begins to execute */
+drawStart();
+//Sets an interval to run the drawStart function
+var presStart = setInterval(drawStart, 400);
 void IOT_LEADERBOARD.start();
-requestAnimationFrame(gameLoop);
+
+
+/* Original controls, with numeric-button aliases for the controller mapper. */
+document.addEventListener("keydown", event => {
+  if (!GAME_LOGIN.unlocked) return;
+  if (DEATH_QUIZ.handleKey(event)) return;
+  if (window.ARCADE_BOARD && ARCADE_BOARD.handleKey(event)) return;
+  const code = event.code;
+  if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","Enter","Digit1","Digit2","Digit3","Digit4","Numpad1","Numpad2","Numpad3","Numpad4"].includes(code)) event.preventDefault();
+  if (!gamePaused && !gameOver && !gameWon) {
+    if (code === "ArrowRight") activeKey = 39;
+    if (code === "ArrowLeft") activeKey = 37;
+    if (!event.repeat && ["Space","Digit1","Numpad1"].includes(code) && player) player.addLaser();
+  }
+  if (!event.repeat && ["Enter","Digit4","Numpad4"].includes(code)) {
+    if (!gameStart) {
+      clearInterval(presStart); init(); gameStart = true; gameLoop();
+    } else if (gameOver || gameWon) {
+      gameOver = false; gameWon = false; init();
+    }
+  }
+});
+document.addEventListener("keyup", event => {
+  if (["ArrowLeft","ArrowRight"].includes(event.code)) activeKey = -1;
+});
+window.addEventListener("blur", () => activeKey = -1);
 ```
 
 ## SpaceInvaders-master/SpaceInvaders-master/Styles/main.css
 
 ```css
 @font-face {
-  font-family: "Press Start 2P";
+  font-family: "PressStart2P";
   src: url("../fonts/PressStart2P.ttf");
-  font-display: swap;
 }
-html, body { width: 100%; height: 100%; overflow: hidden; }
+
+html, body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: black;
-  color: white;
-  overscroll-behavior: none;
 }
-canvas { font-family: "Press Start 2P", monospace; }
+
+canvas {
+  font-family: "PressStart2P";
+}
+
 #game-canvas {
   outline: 1px solid white;
-  width: min(100vw, 116.6667vh);
-  height: min(100vh, 85.7143vw);
-  object-fit: contain;
-  image-rendering: pixelated;
 }
+
 #background-canvas {
-  border: 0;
+  border: 1px solid black;
   width: 100%;
   height: 100%;
-  position: fixed;
-  inset: 0;
+  position: absolute;
   z-index: -1;
 }
+
+/* Fit the original canvas and the small login form on the Pi display. */
+@font-face { font-family: "Press Start 2P"; src: url("../fonts/PressStart2P.ttf"); }
+body { background: black; color: white; overflow: hidden; }
+[hidden] { display: none !important; }
+#game-canvas { width: min(100vw, 116.6667vh); height: min(100vh, 85.7143vw); }
+#login-panel { box-sizing: border-box; width: min(94vw, 620px); max-height: 96vh; overflow: auto; padding: 18px; background: black; border: 1px solid white; font-family: monospace; font-size: 16px; }
+#login-panel h1 { font-size: 22px; }
+#login-form { display: grid; gap: 8px; }
+#login-form input, #login-form button { box-sizing: border-box; padding: 9px; font: 18px monospace; }
+#login-form input:focus { outline: 3px solid #f2bb05; }
+#login-error { color: #f2bb05; min-height: 20px; margin: 0; }
+.login-help { font-size: 14px; line-height: 1.5; }
+#login-panel h1 { margin: 0 0 12px; }
+#login-panel p { margin: 10px 0; }
+#login-form { gap: 6px; }
+#login-form input, #login-form button { padding: 6px; }
 ```
 
 ## SpaceInvaders-master/SpaceInvaders-master/data/generated-questions.json
@@ -3391,22 +3085,39 @@ canvas { font-family: "Press Start 2P", monospace; }
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#000000">
-    <title>Space Invaders — IoT Defence</title>
+    <title>Space Invaders</title>
+    <link href="https://fonts.googleapis.com/css?family=Audiowide|Press+Start+2P" rel="stylesheet">
     <link rel="stylesheet" href="Styles/main.css">
+    <link rel="icon" href="http://www.unixstickers.com/image/cache/data/stickers/spaceinvaders/Space-medium-invader.sh-600x600.png">
   </head>
   <body>
-    <canvas id="background-canvas" aria-hidden="true"></canvas>
-    <canvas id="game-canvas" width="700" height="600" aria-label="Space Invaders IoT Defence. Use arrow keys and A B C D buttons."></canvas>
+    <canvas id="background-canvas"></canvas>
+    <section id="login-panel" aria-labelledby="login-title">
+      <h1 id="login-title">SPACE INVADERS</h1>
+      <form id="login-form">
+        <label for="login-username">Username</label>
+        <input id="login-username" name="username" autocomplete="username" value="user" autofocus>
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password">
+        <button type="submit">Log in</button>
+        <p id="login-error" role="alert"></p>
+      </form>
+      <p>Training login: user / user</p>
+      <p id="login-character">Selected character: u</p>
+      <p class="login-help">Stick up/down: character. Left/right: field.<br>1: add &nbsp; 2: erase &nbsp; 3: field &nbsp; 4: log in</p>
+    </section>
+    <canvas id="game-canvas" width="700" height="600" hidden></canvas>
+
+    <script src="Scripts/login.js"></script>
     <script src="Scripts/config.js"></script>
     <script src="Scripts/missions.js"></script>
     <script src="Scripts/question-bank.js"></script>
     <script src="Scripts/generated-questions.js"></script>
-    <script src="Scripts/controls.js"></script>
     <script src="Scripts/leaderboard.js"></script>
-    <script src="Scripts/campaign.js"></script>
-    <script src="Scripts/background.js"></script>
-    <script src="Scripts/script.js"></script>
+    <script src="Scripts/arcade-leaderboard.js"></script>
+    <script src="Scripts/death-quiz.js"></script>
+    <script type="text/javascript" src="Scripts/background.js"></script>
+    <script type="text/javascript" src="Scripts/script.js"></script>
   </body>
 </html>
 ```
@@ -4723,7 +4434,7 @@ function tool(name,description,inputSchema,annotations,fn){
     catch(error){return {isError:true,content:[{type:'text',text:error instanceof z.ZodError ? z.prettifyError(error) : error.message}]};}
   });
 }
-tool('list_security_criteria','List all ten game criteria, mission objectives and current question counts.',{},readOnly,()=>store.criteria());
+tool('list_security_criteria','List all ten game criteria, category objectives and current question counts.',{},readOnly,()=>store.criteria());
 tool('get_generation_brief','Get the JSON format, topic guidance and existing prompts for your AI model to generate fresh questions. Works without MCP sampling.',generationInput,readOnly,({criterion,count,difficulty})=>store.brief(criterion,count,difficulty));
 tool('generate_questions','Ask the MCP client model to generate questions using sampling, validate the result and save an unpublished draft. If sampling is unsupported, returns a brief for the client model instead.',generationInput,write,async({criterion,count,difficulty})=>{
   const brief=await store.brief(criterion,count,difficulty);
@@ -4774,7 +4485,7 @@ export const CRITERIA = [
   ['strong-credentials', 'Strong credentials'], ['certificate-management', 'Certificate management'],
   ['network-segmentation', 'Network segmentation'], ['firewall-configuration', 'Firewall configuration'],
   ['secure-topic-design', 'Secure topic design'], ['input-validation', 'Input validation']
-].map(([id,title],i) => ({id,title,mission:i+1}));
+].map(([id,title],i) => ({id,title,category:i+1}));
 export const CriterionSchema = z.enum(CRITERIA.map(c=>c.id));
 export const DifficultySchema = z.enum(['beginner','intermediate','advanced']);
 const text = (min,max) => z.string().trim().min(min).max(max).refine(s=>!/[\u0000-\u001f\u007f]/u.test(s),'Use a single printable line');
@@ -4873,7 +4584,7 @@ export class QuestionStore {
     return CRITERIA.map((criterion,i)=>({ ...criterion,objective:missions[i].objective,
       baseQuestions:missions[i].decisions.length,
       generatedQuestions:published.entries.filter(q=>q.criterion===criterion.id).length,
-      status:'implemented in game source; physical Pi testing separate'
+      status:'question category available after enemy-bullet life loss'
     }));
   }
   async validate(criterion,questions,{allowDraftId}={}) {
@@ -4997,7 +4708,7 @@ test('all ten criteria expose their six existing questions and generation guidan
   const {store}=await fixture(t);const criteria=await store.criteria();assert.equal(criteria.length,10);
   for(const c of CRITERIA){
     const brief=await store.brief(c.id,3,'advanced');assert.equal(brief.existingPrompts.length,6);assert.equal(brief.count,3);
-    assert.equal(brief.criterion.mission,c.mission);assert(brief.instructions.some(x=>x.includes('exactly one correct')));
+    assert.equal(brief.criterion.category,c.category);assert(brief.instructions.some(x=>x.includes('exactly one correct')));
   }
 });
 test('bad answer counts, duplicate choices, repeated prompts and long text are rejected',async t=>{
@@ -6667,11 +6378,14 @@ export function validateScore(value) {
     throw new HttpError(400, 'Invalid submission ID');
   }
   if (typeof value.name !== 'string' || !/^[A-Z0-9]{3,8}$/.test(value.name)) throw new HttpError(400, 'Invalid arcade name');
-  if (!['iot-v1','iot-v2'].includes(value.build)) throw new HttpError(400, 'Unsupported game build');
-  if (!Number.isInteger(value.completed) || value.completed < 0 || value.completed > 10) throw new HttpError(400, 'Invalid mission count');
+  if (!['iot-v1','iot-v2','iot-shooter-v1'].includes(value.build)) throw new HttpError(400, 'Unsupported game build');
+  const shooter = value.build === 'iot-shooter-v1';
+  const waves = shooter ? 3 : 10;
+  if (!Number.isInteger(value.completed) || value.completed < 0 || value.completed > waves) throw new HttpError(400, 'Invalid mission count');
   let maximum = 0;
-  for (let wave = 1; wave <= Math.min(value.completed + 1, 10); wave++) maximum += wave === 1 ? 2500 : wave === 2 ? 4000 : 5000;
-  maximum += value.completed * (value.build === 'iot-v2' ? 1300 : 700);
+  for (let wave = 1; wave <= Math.min(value.completed + 1, waves); wave++) maximum += wave === 1 ? 2500 : wave === 2 ? 4000 : 5000;
+  maximum += value.completed * (shooter ? 500 : value.build === 'iot-v2' ? 1300 : 700);
+  if (shooter) maximum += 500;
   if (value.build === 'iot-v2' && value.completed < 10) maximum += 600;
   if (!Number.isSafeInteger(value.score) || value.score % 100 !== 0 || value.score < -20000 || value.score > maximum) {
     throw new HttpError(400, 'Score outside game bounds');
@@ -6869,135 +6583,65 @@ new_sqlite_classes = ["Leaderboard"]
 ## tests/browser.cjs
 
 ```javascript
-/* Run with Playwright available and the game served at localhost:8000. */
-const { chromium } = require('playwright');
-const assert = require('node:assert/strict');
+/* Regression checks for the restored original shooter and hit-only numeric questions. */
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
 (async()=>{
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
   const context=await browser.newContext({viewport:{width:800,height:480}});
-  const page=await context.newPage(); const errors=[];
-  // A controller exposed to both JoyToKey and the browser must not double-trigger input.
-  await page.addInitScript(()=>Object.defineProperty(navigator,'getGamepads',{value:()=>[{axes:[0,0],buttons:[{pressed:true}]}]}));
-  page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(process.env.IOT_GAME_URL || 'http://localhost:8000');
-  await page.waitForFunction(()=>window.IOT_CAMPAIGN);
-  await page.waitForTimeout(100);
-  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.phase),'title');
-  const phase=()=>page.evaluate(()=>IOT_CAMPAIGN.state.phase);
-  const press=async key=>{await page.keyboard.press(key);};
-  const wait=expected=>page.waitForFunction(p=>IOT_CAMPAIGN.state.phase===p,expected);
-  async function feedback(){await wait('feedback');await press('a');}
-  async function answerCorrect(){
-    await wait('question');
-    const key=await page.evaluate(()=>['a','b','c','d'][IOT_CAMPAIGN.state.m.questions[IOT_CAMPAIGN.state.questionIndex].options.findIndex(o=>o[1])]);
-    await press(key);await feedback();
-  }
-  async function acceptRisksAndLaunch(){
-    await press('c');await press('c'); // Brief -> Kanban -> Risks
-    await press('b');await feedback();
-    await press('ArrowDown');await press('b');await feedback();
-    await press('d');await wait('event');await press('b');await feedback();await wait('battle');
-  }
-  const bank=await page.evaluate(()=>IOT_MISSIONS.map(m=>({title:m.title,questions:m.decisions})));
-  assert.equal(bank.length,10);assert.equal(bank.flatMap(m=>m.questions).length,60);
-  for(const mission of bank) for(const q of mission.questions){assert.equal(q.options.length,4);assert.equal(q.options.filter(o=>o[1]).length,1);assert(q.options.every(o=>o[2].length>15));}
-  await press('a');await wait('plan');
-  await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'iot-mission-brief.png')});
-  // Kanban enforces one active task, charges actual delivered work and supports return.
-  await press('c');await press('a');await feedback();
-  await press('ArrowDown');await press('a');await feedback();
-  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.tasks[1].state),0);
-  await press('ArrowUp');await press('b');await feedback();
-  await press('a');await feedback();await press('a');await feedback();
-  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.spent),180);
-  await press('ArrowLeft'); // Brief
-  await acceptRisksAndLaunch();
-  const initialX=await page.evaluate(()=>player.x);
-  await page.keyboard.down('ArrowRight');await page.waitForTimeout(100);await page.keyboard.up('ArrowRight');
-  assert(await page.evaluate(x=>player.x>x,initialX));
-  await press('a');assert(await page.evaluate(()=>player.lasers.length>0));
-  const beforeHit = await page.evaluate(()=>({score,dx:Math.abs(enemies[0].dx),freq:enemies[0].shotFreq}));
-  // A real collision invokes a question after losing a life.
+  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(process.env.IOT_GAME_URL||'http://localhost:8000');
+  await page.waitForFunction(()=>window.GAME_LOGIN&&window.DEATH_QUIZ);
+  const press=key=>page.keyboard.press(key);
+  assert.equal(await page.evaluate(()=>GAME_LOGIN.unlocked),false);
+  await page.locator('#login-password').fill('wrong');await press('Enter');
+  assert.equal(await page.evaluate(()=>GAME_LOGIN.unlocked),false);
+  await page.locator('#login-password').fill('');
+  await press('1');
+  for(let i=0;i<2;i++)await press('ArrowDown');await press('1');
+  for(let i=0;i<14;i++)await press('ArrowDown');await press('1');
+  for(let i=0;i<13;i++)await press('ArrowUp');await press('1');
+  assert.equal(await page.locator('#login-password').inputValue(),'user');await press('4');
+  assert.equal(await page.evaluate(()=>GAME_LOGIN.unlocked),true);
+  assert.equal(await page.evaluate(()=>gameStart),false);
+  await press('4');await page.waitForFunction(()=>gameStart&&player);
+  assert.equal(await page.evaluate(()=>levels.length),3);
+  assert.equal(await page.evaluate(()=>player.lives),5);
+  assert.equal(await page.evaluate(()=>DEATH_QUIZ.active),false);
+  assert.equal(await page.evaluate(()=>document.querySelector('script[src*="campaign"]')),null);
+  const x=await page.evaluate(()=>player.x);await page.keyboard.down('ArrowRight');await page.waitForTimeout(100);await page.keyboard.up('ArrowRight');assert(await page.evaluate(x=>player.x>x,x));
+  await press('1');assert(await page.evaluate(()=>player.lasers.length>0));
+  // Invaders reaching the bottom recycle without losing a life or creating a question.
+  await page.evaluate(()=>{enemies[0].y=canvas.height-player.height;enemies[0].update();});
+  await page.waitForTimeout(60);
+  assert.equal(await page.evaluate(()=>player.lives),5);assert.equal(await page.evaluate(()=>DEATH_QUIZ.active),false);assert.equal(await page.evaluate(()=>gameOver),false);
+  await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'restored-shooter.png')});
+  // A real enemy-bullet collision deducts one life and opens exactly one question.
+  const before=await page.evaluate(()=>score);
   await page.evaluate(()=>{enemies[0].lasers.push(new Laser(player.x+5,player.y+1,0,6,6,true));laserHitCheck();});
-  await wait('question'); assert.equal(await page.evaluate(()=>player.lives),4);
-  await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'iot-death-question.png')});
-  assert.equal(await page.evaluate(()=>score),beforeHit.score-1100);
-  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.pressure),1);
-  assert(await page.evaluate(dx=>Math.abs(enemies[0].dx)>dx,beforeHit.dx));
-  assert(await page.evaluate(freq=>enemies[0].shotFreq<freq,beforeHit.freq));
-  const frames=await page.evaluate(()=>IOT_CAMPAIGN.state.m.battleFrames);
-  await page.waitForTimeout(150); assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.battleFrames),frames);
-  await answerCorrect();await wait('battle');
-  assert.equal(await page.evaluate(()=>score),beforeHit.score-1000);
-  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.pressure),0);
-  assert.equal(await page.evaluate(()=>player.volleySize),2);
-  await page.evaluate(()=>player.clearLasers());await press('a');
-  assert.equal(await page.evaluate(()=>player.lasers.length),2);
-  await page.evaluate(()=>IOT_CAMPAIGN.question('battle'));await answerCorrect();await wait('battle');
-  assert.equal(await page.evaluate(()=>player.volleySize),3);
-  await page.evaluate(()=>player.clearLasers());await press('a');
-  assert.equal(await page.evaluate(()=>player.lasers.length),3);
-  // Fatal collision still completes the security lesson and review before name entry.
-  await page.evaluate(()=>{player.setLives(1);enemies[0].lasers.push(new Laser(player.x+5,player.y+1,0,6,6,true));laserHitCheck();});
-  await wait('question');
-  while(await phase()==='question')await answerCorrect();
-  await wait('review');await press('a');await wait('name');
-  await press('a');await press('ArrowRight');await press('a');await press('ArrowRight');await press('a');
-  await context.setOffline(true);await press('d');await wait('leaderboard');
-  assert.equal(await page.evaluate(()=>IOT_LEADERBOARD.snapshot().pending),1);
-  await context.setOffline(false);await page.reload();await page.waitForTimeout(200);
-  assert.equal(await page.evaluate(()=>IOT_LEADERBOARD.snapshot().pending),1);
-  // A fresh campaign clears all ten waves and requires at least three decisions each.
-  await press('a');
-  for(let wave=1;wave<=10;wave++){
-    await wait('plan');assert.equal(await page.evaluate(()=>level),wave);
-    await acceptRisksAndLaunch();
-    await page.evaluate(()=>{enemies=[];numOfEnemies=0;});
-    await wait('question');
-    while(await phase()==='question') await answerCorrect();
-    await wait('review');assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.answered.size),3);
-    await press('a');
-  }
-  await wait('name');assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.completed),10);
-  // Restore connectivity to a mock server: a wrong ACK retains the same UUID;
-  // the next valid ACK removes it and refreshes the cached top ten.
-  const ids=[]; let badAck=true;
-  await context.route('**/Scripts/config.js',async route=>{
-    const response=await route.fetch();
-    await route.fulfill({response,body:(await response.text()).replace('leaderboardUrl: ""','leaderboardUrl: "https://board.test"')});
-  });
-  await context.route('https://board.test/**',async route=>{
-    const request=route.request();const headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type','Access-Control-Allow-Methods':'GET, POST, OPTIONS'};
-    if(request.method()==='OPTIONS')return route.fulfill({status:204,headers});
-    if(request.method()==='POST'){
-      const body=request.postDataJSON();ids.push(body.id);
-      return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify({ok:true,id:badAck?'wrong-id':body.id})});
-    }
-    return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify({top:[{name:'ABC',score:1000}]})});
-  });
-  await page.reload();
-  await page.waitForFunction(()=>IOT_LEADERBOARD.snapshot().status.includes('retained for retry'));
-  assert.equal(await page.evaluate(()=>IOT_LEADERBOARD.snapshot().pending),1);
-  badAck=false;await page.evaluate(()=>IOT_LEADERBOARD.flush());
-  assert.equal(await page.evaluate(()=>IOT_LEADERBOARD.snapshot().pending),0);
-  assert.equal(ids.length,2);assert.equal(ids[0],ids[1]);
-  assert.equal(await page.evaluate(()=>IOT_LEADERBOARD.snapshot().top[0].name),'ABC');
-  // A generated static export extends only the matching mission and is visible in-game.
-  await context.route('**/Scripts/generated-questions.js',route=>route.fulfill({contentType:'application/javascript',body:
-    'IOT_MISSIONS[0].decisions.push({prompt:"A reviewed extra question for this mission?",options:[["Choice one",true,"A checked explanation for the correct choice."],["Choice two",false,"An explanation for an incorrect option."],["Choice three",false,"An explanation for another wrong option."],["Choice four",false,"An explanation for the final wrong option."]]});'}));
-  await page.reload();await page.waitForFunction(()=>IOT_MISSIONS[0].decisions.length===7);
-  assert.equal(await page.evaluate(()=>IOT_MISSIONS[1].decisions.length),6);
-  await press('a');await wait('plan');
-  // Practice retries cannot farm points or undo the recorded difficulty consequence.
-  const wrong=await page.evaluate(()=>{IOT_CAMPAIGN.question('plan');return ['a','b','c','d'][IOT_CAMPAIGN.state.m.questions[IOT_CAMPAIGN.state.questionIndex].options.findIndex(o=>!o[1])];});
-  await press(wrong);await feedback();assert.equal(await page.evaluate(()=>score),0);
-  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.pressure),1);
-  const repeat=await page.evaluate(()=>{IOT_CAMPAIGN.state.phase='question';return ['a','b','c','d'][IOT_CAMPAIGN.state.m.questions[IOT_CAMPAIGN.state.questionIndex].options.findIndex(o=>o[1])];});
-  await press(repeat);await feedback();assert.equal(await page.evaluate(()=>score),0);
-  assert.equal(await page.evaluate(()=>IOT_CAMPAIGN.state.m.pressure),1);
-  assert.deepEqual(errors,[]); console.log('PASS: 60-question schema, four-button flow, Kanban limit, collisions, paused questions, offline persistence, ten reviews and victory.');
+  assert.equal(await page.evaluate(()=>player.lives),4);assert.equal(await page.evaluate(()=>score),before-1100);
+  assert.equal(await page.evaluate(()=>DEATH_QUIZ.phase),'question');
+  const frozen=await page.evaluate(()=>enemies[0].x);await press('ArrowRight');await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>enemies[0].x),frozen);
+  await press('a');await press('b');await press('c');await press('d');assert.equal(await page.evaluate(()=>DEATH_QUIZ.phase),'question');
+  const correct=await page.evaluate(()=>String(DEATH_QUIZ.question.options.findIndex(o=>o[1])+1));await press(correct);
+  assert.equal(await page.evaluate(()=>DEATH_QUIZ.phase),'explanation');assert.equal(await page.evaluate(()=>score),before-1000);
+  await press('1');assert.equal(await page.evaluate(()=>DEATH_QUIZ.active),false);assert.equal(await page.evaluate(()=>player.volleySize),2);
+  await page.evaluate(()=>player.clearLasers());await press('1');assert.equal(await page.evaluate(()=>player.lasers.length),2);
+  // Clearing a wave advances directly to the next original wave, with no question.
+  await page.evaluate(()=>{enemies=[];numOfEnemies=0;nextLevelDelay=249;});await page.waitForFunction(()=>level===2);
+  assert.equal(await page.evaluate(()=>DEATH_QUIZ.active),false);assert.equal(await page.evaluate(()=>player.lives),4);
+  // Numeric keypad answers work too; the final life still gets exactly its hit question.
+  await page.evaluate(()=>{player.lives=1;enemies[0].lasers.push(new Laser(player.x+5,player.y+1,0,6,6,true));laserHitCheck();});
+  assert.equal(await page.evaluate(()=>player.lives),0);assert.equal(await page.evaluate(()=>DEATH_QUIZ.phase),'question');
+  await press('Numpad2');assert.equal(await page.evaluate(()=>DEATH_QUIZ.phase),'explanation');await press('4');assert.equal(await page.evaluate(()=>gameOver),true);
+  await press('4');assert.equal(await page.evaluate(()=>player.lives),5);assert.equal(await page.evaluate(()=>level),1);assert.equal(await page.evaluate(()=>DEATH_QUIZ.active),false);
+  // Winning the original third wave never opens a question.
+  await page.evaluate(()=>{level=3;levelsCleared=2;enemies=[];numOfEnemies=0;levelBonusPaid=false;});await page.waitForFunction(()=>gameWon);
+  assert.equal(await page.evaluate(()=>DEATH_QUIZ.active),false);
+  assert.equal(await page.evaluate(()=>IOT_MISSIONS.flatMap(m=>m.decisions).length),60);
+  assert.deepEqual(errors,[]);console.log('PASS: user/user login, original 3 waves, bullet-only life loss, hit-only questions, numeric 1-4/keypad answers, original restart and no questions on wave clear or victory.');
   await browser.close();
-})().catch(error=>{console.error(error);process.exit(1);});
+})().catch(e=>{console.error(e);process.exit(1);});
 ```
 
 ## tests/worker.test.mjs
@@ -7022,6 +6666,11 @@ test('v2 bonuses have distinct bounds while queued v1 scores remain valid',()=>{
   assert.equal(validateScore({...base,build:'iot-v2',score:59500,completed:10}).score,59500);
   assert.throws(()=>validateScore({...base,build:'iot-v2',score:59600,completed:10}));
   assert.throws(()=>validateScore({...base,score:59500,completed:10}));
+});
+test('restored shooter has three waves and its own bounded score format',()=>{
+  assert.equal(validateScore({...base,build:'iot-shooter-v1',score:13500,completed:3}).score,13500);
+  assert.throws(()=>validateScore({...base,build:'iot-shooter-v1',score:13600,completed:3}));
+  assert.throws(()=>validateScore({...base,build:'iot-shooter-v1',completed:4}));
 });
 test('a retry is idempotent and an ID collision cannot replace an accepted score', () => {
   const first = addScore(empty(), base);

@@ -14,11 +14,14 @@ export function validateScore(value) {
     throw new HttpError(400, 'Invalid submission ID');
   }
   if (typeof value.name !== 'string' || !/^[A-Z0-9]{3,8}$/.test(value.name)) throw new HttpError(400, 'Invalid arcade name');
-  if (!['iot-v1','iot-v2'].includes(value.build)) throw new HttpError(400, 'Unsupported game build');
-  if (!Number.isInteger(value.completed) || value.completed < 0 || value.completed > 10) throw new HttpError(400, 'Invalid mission count');
+  if (!['iot-v1','iot-v2','iot-shooter-v1'].includes(value.build)) throw new HttpError(400, 'Unsupported game build');
+  const shooter = value.build === 'iot-shooter-v1';
+  const waves = shooter ? 3 : 10;
+  if (!Number.isInteger(value.completed) || value.completed < 0 || value.completed > waves) throw new HttpError(400, 'Invalid mission count');
   let maximum = 0;
-  for (let wave = 1; wave <= Math.min(value.completed + 1, 10); wave++) maximum += wave === 1 ? 2500 : wave === 2 ? 4000 : 5000;
-  maximum += value.completed * (value.build === 'iot-v2' ? 1300 : 700);
+  for (let wave = 1; wave <= Math.min(value.completed + 1, waves); wave++) maximum += wave === 1 ? 2500 : wave === 2 ? 4000 : 5000;
+  maximum += value.completed * (shooter ? 500 : value.build === 'iot-v2' ? 1300 : 700);
+  if (shooter) maximum += 500;
   if (value.build === 'iot-v2' && value.completed < 10) maximum += 600;
   if (!Number.isSafeInteger(value.score) || value.score % 100 !== 0 || value.score < -20000 || value.score > maximum) {
     throw new HttpError(400, 'Score outside game bounds');

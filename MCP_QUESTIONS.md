@@ -1,6 +1,6 @@
 # Question-generation MCP server
 
-The new server is `mcp/server.mjs`; the requested client JSON template is `mcp.json`. It uses the official Model Context Protocol SDK over local standard input/output. It reads and writes this repository's question files on your development computer. It does not run inside the game, open a network port, need a GitHub token, or change the JoyToKey controls. The game still runs offline on the Pi with its 60 original upgrade questions and any approved exports.
+The new server is `mcp/server.mjs`; the requested client JSON template is `mcp.json`. It uses the official Model Context Protocol SDK over local standard input/output. It reads and writes this repository's question files on your development computer. It does not run inside the game, open a network port or need a GitHub token. The game still runs offline on the Pi with its 60 original upgrade questions and any approved exports.
 
 ## Install and connect
 
@@ -52,7 +52,7 @@ The workflow is:
 1. `list_security_criteria` identifies the exact criterion ID and current question count.
 2. `generate_questions`, or `get_generation_brief` followed by `save_question_draft`, creates a draft in `.question-drafts/`.
 3. Inspect the draft with `get_question_draft`; review technical accuracy, answer ambiguity, reading level and wording. Automated validation checks structure, not factual truth.
-4. After review, call `publish_question_draft` with its ID, `reviewed: true` and a review note. It appends questions to the matching mission and rebuilds the static question script.
+4. After review, call `publish_question_draft` with its ID, `reviewed: true` and a review note. It appends questions to the matching security-question category and rebuilds the static question script.
 5. Review and commit the two exported game files; merge the changes into the branch Render deploys. The Pi uses those static files after its local copy is updated. Neither platform needs to contact MCP during gameplay.
 
 The prompt `write-iot-questions` and resource `iot-questions://workflow` expose the same workflow to compatible clients. Tools are discoverable through the standard MCP handshake.
@@ -61,7 +61,7 @@ The prompt `write-iot-questions` and resource `iot-questions://workflow` expose 
 
 | Tool | Purpose |
 |---|---|
-| `list_security_criteria` | List all ten missions and their question counts |
+| `list_security_criteria` | List all ten security categories and their question counts |
 | `get_generation_brief` | Provide model instructions, format and existing prompts |
 | `generate_questions` | Generate through client sampling, validate and save a draft, or return fallback instructions |
 | `validate_questions` | Check structure, lengths, answer uniqueness and duplicate prompts |
@@ -102,7 +102,7 @@ The original files remain `Scripts/missions.js` and `Scripts/question-bank.js`. 
 - `SpaceInvaders-master/SpaceInvaders-master/data/generated-questions.json`: tracked source of truth, including criterion, review note and timestamp.
 - `SpaceInvaders-master/SpaceInvaders-master/Scripts/generated-questions.js`: tracked static export loaded after the base bank.
 
-There is a 250-question limit for generated additions across the game, independent of the original 60. Mission counts update automatically. Question difficulty labels guide writing; gameplay difficulty follows the separate pressure mechanic in GAME_UPGRADE.md.
+There is a 250-question limit for generated additions across the game, independent of the original 60. The original three shooter waves share this question pool. Questions appear only after an enemy bullet removes a life. Map the four JoyToKey buttons to 1, 2, 3 and 4. Question difficulty labels guide writing; gameplay difficulty follows the pressure mechanic in GAME_UPGRADE.md.
 
 Unpublished drafts and generated client configuration stay out of Git. The server never commits, pushes, merges or deploys changes. Publication is idempotent: retrying the same draft repairs an interrupted export without duplicating its questions. Whole files are replaced atomically; a short filesystem lock prevents competing server processes from overwriting each other's changes. After a crash, stop all question-server processes before removing an abandoned empty `.question-drafts/.write-lock` directory. Normal operations remove it automatically. Symlink and path traversal access is rejected; repository JavaScript is parsed as JSON data rather than executed by the server.
 

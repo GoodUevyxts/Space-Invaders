@@ -3,21 +3,38 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#000000">
-    <title>Space Invaders — IoT Defence</title>
+    <title>Space Invaders</title>
+    <link href="https://fonts.googleapis.com/css?family=Audiowide|Press+Start+2P" rel="stylesheet">
     <link rel="stylesheet" href="Styles/main.css">
+    <link rel="icon" href="http://www.unixstickers.com/image/cache/data/stickers/spaceinvaders/Space-medium-invader.sh-600x600.png">
   </head>
   <body>
-    <canvas id="background-canvas" aria-hidden="true"></canvas>
-    <canvas id="game-canvas" width="700" height="600" aria-label="Space Invaders IoT Defence. Use arrow keys and A B C D buttons."></canvas>
+    <canvas id="background-canvas"></canvas>
+    <section id="login-panel" aria-labelledby="login-title">
+      <h1 id="login-title">SPACE INVADERS</h1>
+      <form id="login-form">
+        <label for="login-username">Username</label>
+        <input id="login-username" name="username" autocomplete="username" value="user" autofocus>
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password">
+        <button type="submit">Log in</button>
+        <p id="login-error" role="alert"></p>
+      </form>
+      <p>Training login: user / user</p>
+      <p id="login-character">Selected character: u</p>
+      <p class="login-help">Stick up/down: character. Left/right: field.<br>1: add &nbsp; 2: erase &nbsp; 3: field &nbsp; 4: log in</p>
+    </section>
+    <canvas id="game-canvas" width="700" height="600" hidden></canvas>
+
+    <script src="Scripts/login.js"></script>
     <script src="Scripts/config.js"></script>
     <script src="Scripts/missions.js"></script>
     <script src="Scripts/question-bank.js"></script>
     <script src="Scripts/generated-questions.js"></script>
-    <script src="Scripts/controls.js"></script>
     <script src="Scripts/leaderboard.js"></script>
-    <script src="Scripts/campaign.js"></script>
-    <script src="Scripts/background.js"></script>
-    <script src="Scripts/script.js"></script>
+    <script src="Scripts/arcade-leaderboard.js"></script>
+    <script src="Scripts/death-quiz.js"></script>
+    <script type="text/javascript" src="Scripts/background.js"></script>
+    <script type="text/javascript" src="Scripts/script.js"></script>
   </body>
 </html>

@@ -20,7 +20,7 @@ function tool(name,description,inputSchema,annotations,fn){
     catch(error){return {isError:true,content:[{type:'text',text:error instanceof z.ZodError ? z.prettifyError(error) : error.message}]};}
   });
 }
-tool('list_security_criteria','List all ten game criteria, mission objectives and current question counts.',{},readOnly,()=>store.criteria());
+tool('list_security_criteria','List all ten game criteria, category objectives and current question counts.',{},readOnly,()=>store.criteria());
 tool('get_generation_brief','Get the JSON format, topic guidance and existing prompts for your AI model to generate fresh questions. Works without MCP sampling.',generationInput,readOnly,({criterion,count,difficulty})=>store.brief(criterion,count,difficulty));
 tool('generate_questions','Ask the MCP client model to generate questions using sampling, validate the result and save an unpublished draft. If sampling is unsupported, returns a brief for the client model instead.',generationInput,write,async({criterion,count,difficulty})=>{
   const brief=await store.brief(criterion,count,difficulty);

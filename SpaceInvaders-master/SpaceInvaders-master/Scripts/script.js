@@ -82,6 +82,9 @@ let numOfEnemies = 0;
 let level = 1;
 let nextLevelDelay = 0;
 let gamePausedDelay = 0;
+let resetFormationNextTick = false;
+let levelBonusPaid = false;
+let levelsCleared = 0;
 
 /* Base Functions (not used for game loop) */
 let playSounds = function(sound) {
@@ -155,7 +158,7 @@ class GamePiece {
     // be default, draw a rectangle
     context.fillStyle = this.color;
     context.beginPath();
-    context.fillRect(this.x, this.y, this.width, this.height);
+    context.fillRect(this.x, this.y, this.height, this.width);
     context.fill();
   }
 }
@@ -299,11 +302,9 @@ class Player extends Character {
   // add laser and player sound effect
   addLaser() {
     let laserCount = this.lasers.length;
-    // Correct security answers unlock parallel beams from one original fire press.
     const count = Math.min(this.volleySize, this.laserTotal - this.lasers.length);
     for (let beam = 0; beam < count; beam++) {
-      const spacing = 12;
-      const x = this.x + this.width / 2 - 3 + (beam - (count - 1) / 2) * spacing;
+      const x = this.x + this.width / 2 - 3 + (beam - (count - 1) / 2) * 12;
       this.lasers.push(new Laser(x, this.y, this.bulletSpeed, 6, 6, false));
     }
 
@@ -370,6 +371,9 @@ class Enemy extends Character {
     super(x, y, dx, dy, width, height, color, 4, true, 6, imgSrc, srcX, srcY, srcWidth, srcHeight);
 
     this.enemyType = enemyType;
+    this.spawnY = y;
+    this.baseSpeed = Math.abs(dx);
+    this.baseShotFreq = shotFreq;
     //number of frames between shots
     this.shotFrame = 0;
     this.shotFreq = shotFreq;
@@ -467,12 +471,9 @@ class Enemy extends Character {
       //check if any lasers need to be removed
       this.removeLasers();
 
-      //if the enemy reaches the bottom of the screen, it's an automatic game over
-      if (this.y + this.height > canvas.height - (player.getHeight())) {
-        gameOver = true;
-        player.setLives(0);
-        playSounds(explosion);
-        console.log(ded);
+      // Reaching the bottom recycles the surviving formation; only an enemy bullet can remove a life.
+      if (this.y + this.height > canvas.height - player.getHeight() - 20) {
+        resetFormationNextTick = true;
       }
 
       //draw the new image
@@ -508,6 +509,7 @@ let enemyHeight = canvas.height / 20;
 let createEnemies = function(speed) {
   numOfEnemies = 0;
   enemies = [];
+  levelBonusPaid = false;
   for (let i = 0; i < 5; i++) {
     for (let j = 0; j < 5; j++) {
       let enemyType = j % 3;
@@ -519,6 +521,7 @@ let createEnemies = function(speed) {
       numOfEnemies++;
     }
   }
+  DEATH_QUIZ.applyDifficulty();
 }
 
 // levels differ by the speed of the enemies and the number of lives of some enemies
@@ -543,13 +546,6 @@ let level3 = function() {
 levels.push(level1);
 levels.push(level2);
 levels.push(level3);
-// Seven additional missions reuse the original wave constructor, with bounded speed.
-for (let mission = 4; mission <= 10; mission++) {
-  levels.push(function() {
-    level = mission;
-    createEnemies(Math.min(4.6, 4 + (mission - 3) * 0.1));
-  });
-}
 
 // initialize the start of the game
 let init = function() {
@@ -557,10 +553,13 @@ let init = function() {
   level = 1;
   score = 0;
   audioTick = 0;
+  gamePaused = false; gamePausedDelay = 0; nextLevelDelay = 0;
+  moveDownNextTick = false; resetFormationNextTick = false; levelsCleared = 0;
 
   let playerWidth = canvas.width / 16;
   let playerHeight = canvas.height / 18;
   player = new Player((canvas.width / 2) - 25, 10, playerWidth, playerHeight, spriteSheet, 150, 637, 73, 53);
+  DEATH_QUIZ.reset();
 }
 
 // check collisions
@@ -596,6 +595,8 @@ let laserHitCheck = function() {
         score -= 1100;
         gamePaused = true;
         player.loseLife();
+        DEATH_QUIZ.begin();
+        return;
     }
   }
 }
@@ -611,13 +612,13 @@ function moveAllEnemiesDownCheck() {
   }
 }
 
-//draw the "Press Enter To Start" screen when the user navigates to the screen
+//draw the "4 / Enter To Start" screen when the user navigates to the screen
 //the text appears when "flash" is true
 var flash = false;
 let drawStart = function() {
   drawBackground();
   if (flash) {
-    let text = "Press Enter To Start";
+    let text = "4 / Enter To Start";
     let fontSize = "28px"
     // if (window.innerWidth >= 1000) {
     //   text += " To Start";
@@ -637,7 +638,7 @@ let drawStart = function() {
 let drawRestart = function() {
   context.font = "15px 'Press Start 2P', cursive";
   context.fillStyle = "white";
-  context.fillText("Press Enter to restart game", canvas.width / 2 - 200, canvas.height / 2 + 100);
+  context.fillText("4 / Enter to restart", canvas.width / 2 - 200, canvas.height / 2 + 100);
 }
 
 //draw the number of lives at the top of the screen along with the line separating the top portion from the game
@@ -680,6 +681,7 @@ let youWin = function() {
   context.fillStyle = "white";
   context.fillText("You Win!!!", canvas.width / 2 - 190, canvas.height / 2);
   drawRestart();
+  context.font="16px monospace";context.fillText("3: save score / leaderboard",150,470);
 
   gameWon = true;
 }
@@ -713,13 +715,15 @@ let checkGameOver = function() {
     context.fillStyle = "white";
     context.fillText("Game Over", canvas.width / 2 - 175, canvas.height / 2);
     drawRestart();
+    context.font="16px monospace";context.fillText("3: save score / leaderboard",150,470);
   }
 }
 
 //check if all enemies have been defeated. If they have, check if all levels have been beaten
 //if all levels have been beaten, display "you win" text. otherwise, display "next level" text and reset necessary variables
 let endOfLevelCheck = function() {
-  if (numOfEnemies === 0) {
+  if (numOfEnemies === 0 && !gameOver && !DEATH_QUIZ.active) {
+    if (!levelBonusPaid) { score += 500; levelsCleared++; levelBonusPaid = true; }
     if (level < levels.length) {
       //nextLevelDelay is used to keep track of the number of ticks between the end of one level and start of the next
       nextLevelDelay++;
@@ -755,42 +759,66 @@ let playEnemyMovementSounds = function() {
 
 //funtion that's run to play game
 //updates all of the necessary components to keep game running
-// A fixed 60 Hz simulation preserves the original frame-based speeds on any display.
-let previousFrame = 0;
-let simulationBank = 0;
-let gameLoop = function(now) {
+let gameLoop = function() {
   requestAnimationFrame(gameLoop);
-  IOT_INPUT.poll(now);
-  if (IOT_CAMPAIGN.state.phase !== "battle") {
-    previousFrame = now; simulationBank = 0;
-    IOT_CAMPAIGN.draw();
+  if (window.ARCADE_BOARD && ARCADE_BOARD.draw()) return;
+  drawBackground();
+  if (DEATH_QUIZ.active) {
+    player.draw();
+    for (const enemy of enemies) if (!enemy.getHit()) enemy.draw();
+    drawScore(); drawLives(); DEATH_QUIZ.draw();
     return;
   }
-  const elapsed = previousFrame ? Math.min(83, now - previousFrame) : 16.67;
-  previousFrame = now;
-  simulationBank += elapsed;
-  if (simulationBank < 1000 / 60) return;
-  while (simulationBank >= 1000 / 60 && IOT_CAMPAIGN.state.phase === "battle") {
-    simulationBank -= 1000 / 60;
-    drawBackground();
-    IOT_CAMPAIGN.tick();
-    activeKey = IOT_INPUT.down("right") ? 39 : IOT_INPUT.down("left") ? 37 : -1;
-    if (!gameWon && !gameOver) {
-      player.update(activeKey);
-      moveAllEnemiesDownCheck();
-      for (const enemy of enemies) enemy.update();
-      laserHitCheck();
+  if (!gameWon && !gameOver && !gamePaused) {
+    player.update(activeKey);
+    moveAllEnemiesDownCheck();
+    for (let i = 0; i < enemies.length; i++) {
+      enemies[i].update();
     }
-    if (gameOver || gamePaused) IOT_CAMPAIGN.loss();
-    else if (numOfEnemies === 0) IOT_CAMPAIGN.cleared();
-    playEnemyMovementSounds();
+    if (resetFormationNextTick) {
+      for (const enemy of enemies) if (!enemy.getHit()) enemy.setY(enemy.spawnY);
+      resetFormationNextTick = false;
+    }
+    laserHitCheck();
   }
+  if (DEATH_QUIZ.active) { drawScore(); drawLives(); DEATH_QUIZ.draw(); return; }
   drawScore();
   drawLives();
-  IOT_CAMPAIGN.draw();
-};
+  checkGamePaused();
+  endOfLevelCheck();
+  checkGameOver();
+  playEnemyMovementSounds();
+}
 
-// The single router also handles the original arrow/Space/Enter keys.
-IOT_INPUT.bind(IOT_CAMPAIGN.input);
+
+/* Runs before game begins to execute */
+drawStart();
+//Sets an interval to run the drawStart function
+var presStart = setInterval(drawStart, 400);
 void IOT_LEADERBOARD.start();
-requestAnimationFrame(gameLoop);
+
+
+/* Original controls, with numeric-button aliases for the controller mapper. */
+document.addEventListener("keydown", event => {
+  if (!GAME_LOGIN.unlocked) return;
+  if (DEATH_QUIZ.handleKey(event)) return;
+  if (window.ARCADE_BOARD && ARCADE_BOARD.handleKey(event)) return;
+  const code = event.code;
+  if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","Enter","Digit1","Digit2","Digit3","Digit4","Numpad1","Numpad2","Numpad3","Numpad4"].includes(code)) event.preventDefault();
+  if (!gamePaused && !gameOver && !gameWon) {
+    if (code === "ArrowRight") activeKey = 39;
+    if (code === "ArrowLeft") activeKey = 37;
+    if (!event.repeat && ["Space","Digit1","Numpad1"].includes(code) && player) player.addLaser();
+  }
+  if (!event.repeat && ["Enter","Digit4","Numpad4"].includes(code)) {
+    if (!gameStart) {
+      clearInterval(presStart); init(); gameStart = true; gameLoop();
+    } else if (gameOver || gameWon) {
+      gameOver = false; gameWon = false; init();
+    }
+  }
+});
+document.addEventListener("keyup", event => {
+  if (["ArrowLeft","ArrowRight"].includes(event.code)) activeKey = -1;
+});
+window.addEventListener("blur", () => activeKey = -1);

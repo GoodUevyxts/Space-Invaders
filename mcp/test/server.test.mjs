@@ -30,7 +30,7 @@ test('all ten criteria expose their six existing questions and generation guidan
   const {store}=await fixture(t);const criteria=await store.criteria();assert.equal(criteria.length,10);
   for(const c of CRITERIA){
     const brief=await store.brief(c.id,3,'advanced');assert.equal(brief.existingPrompts.length,6);assert.equal(brief.count,3);
-    assert.equal(brief.criterion.mission,c.mission);assert(brief.instructions.some(x=>x.includes('exactly one correct')));
+    assert.equal(brief.criterion.category,c.category);assert(brief.instructions.some(x=>x.includes('exactly one correct')));
   }
 });
 test('bad answer counts, duplicate choices, repeated prompts and long text are rejected',async t=>{
